@@ -1,0 +1,6 @@
+dataset_id,name,source_type,parent_dataset_ids,derivation_mode,contributor_party_type,status
+DS-CUS-001,Agency air shopping requests,Customer-contributed,,,Agency,Approved
+DS-SUP-001,Supplier published fare responses,Supplier-sourced,,,Supplier,Approved
+DS-SUP-002,Supplier private and negotiated fare responses,Supplier-sourced,,,Supplier,Approved
+DS-DER-001,Air shopping transaction log,Derived,DS-CUS-001;DS-SUP-001;DS-SUP-002,Inherit,,Approved
+DS-DER-002,Air shopping market insights,Derived,DS-DER-001,Transform,,Approved
