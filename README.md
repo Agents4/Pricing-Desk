@@ -32,6 +32,14 @@ air-shopping-register-example.xlsx: agency requests and supplier fare responses,
 ## 4. SharePoint kit (sharepoint-kit/)
 Party-aware rights model for rights that vary by agency and supplier: list schema (xlsx and JSON), a resolver that computes effective rights and coverage, and sample data. See sharepoint-kit/README.md.
 
+## 5. Microsoft Copilot guide (copilot-guide/)
+For use without creating agents.
+- Copilot-Guide.docx: setup in about 20 minutes, the routine for each task, number checks, data handling, troubleshooting.
+- Copilot-Playbooks.docx: the nine skills plus a rights lookup, rewritten as playbooks with a copy-and-paste prompt for each. Add it to a Copilot Notebook as a reference.
+- custom-instructions.txt: paste into Copilot custom instructions.
+- notebook-instructions.txt: paste into the Notebook's instructions.
+Copilot cannot load the Claude skills or run the scripts. Use it to draft and extract, and use the scripts or Excel formulas for numbers that matter.
+
 ## Notes
 - Only Legal sets legal_confirmed. Anything other than Yes counts as not confirmed.
 - The sample CSVs in the SharePoint kit mark rows confirmed only so the tests run.
