@@ -1,0 +1,9 @@
+description = "Review a non-standard deal and route the approval tier"
+prompt = """
+Use the deal-desk-review skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Show the waterfall, guardrail checks, approval tier (first rule tripped) and two or three counteroffers. Do not contact the customer.
+"""

@@ -42,6 +42,18 @@ For use without creating agents.
 - source/: the Node scripts that build the two .docx files (npm install docx, then node guide.js OUT.docx and node playbooks.js OUT.docx from inside source/). content.js holds the paste-in instructions and the playbook prompts.
 Copilot cannot load the Claude skills or run the scripts. Use it to draft and extract, and use the scripts or Excel formulas for numbers that matter.
 
+## 6. Gemini CLI extension (repo root)
+This repo is also a Gemini CLI extension. Install it with:
+- gemini extensions install https://github.com/Agents4/Pricing-Desk
+- or, from a clone for development: gemini extensions link .
+Restart the CLI after installing. The extension carries:
+- GEMINI.md: standing desk rules (unknown is the default, only Legal confirms rights, compute don't estimate, recommend only).
+- skills/: the nine skills, loaded on demand.
+- commands/pricing/: /pricing:deal-review, :realization, :tier-fit, :price-change, :wtp-study, :register-intake, :price-setting, :price-book, :licence-request, :rights-lookup.
+- agents/: @rights-reviewer (read-only) and @price-book-checker (runs the checker script only). Gemini CLI marks subagents as a preview feature and may need them enabled in settings.
+- hooks/: a BeforeTool guard that blocks write_file and replace edits that set legal_confirmed to Yes or a price book line to Approved. It is a guardrail against model mistakes, not a security control: it does not see shell commands. Legal can set PRICING_DESK_LEGAL=1 and the Pricing Council PRICING_DESK_COUNCIL=1 to override. Note the sample CSVs in sharepoint-kit/ contain Yes values, so editing them needs the override.
+Checked with Gemini CLI 0.65.0: extensions validate passes, link succeeds, the context file and all nine skills load. The commands, subagents and hook were checked for format only (TOML and JSON parse, hook tested with sample inputs); they have not been run against a live model session.
+
 ## Notes
 - Only Legal sets legal_confirmed. Anything other than Yes counts as not confirmed.
 - The sample CSVs in the SharePoint kit mark rows confirmed only so the tests run.
