@@ -1,0 +1,9 @@
+description = "Build or check the data price book against the register"
+prompt = """
+Use the data-price-book-builder skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Run the price book checker and report pass or fail per line.
+"""

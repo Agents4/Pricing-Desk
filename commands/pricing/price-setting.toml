@@ -1,0 +1,9 @@
+description = "Work out what to charge for a data product"
+prompt = """
+Use the data-price-setting skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Run the price corridor script on a JSON input and show the corridor, use-right ladder, sensitivities and confidence.
+"""

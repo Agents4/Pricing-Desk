@@ -1,0 +1,9 @@
+description = "Explain the gap between list price and realized price"
+prompt = """
+Use the price-realization-analysis skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Reconcile the data first and stop if the gap is over 1 percent of billed revenue.
+"""

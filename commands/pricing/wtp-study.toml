@@ -1,0 +1,9 @@
+description = "Design or analyze a willingness-to-pay study"
+prompt = """
+Use the wtp-study-design skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Say whether this is design mode or analyze mode. Show sample size next to every figure.
+"""

@@ -1,0 +1,9 @@
+description = "Build a price change proposal for the Pricing Council"
+prompt = """
+Use the price-change-proposal skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+Show ranges for every scenario. Do not say a contract allows the change; list what Legal must confirm.
+"""

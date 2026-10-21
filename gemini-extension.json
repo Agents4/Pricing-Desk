@@ -1,0 +1,6 @@
+{
+  "name": "pricing-desk",
+  "version": "0.1.0",
+  "description": "Pricing desk for a travel-technology (GDS) company: nine pricing and data-rights skills, slash commands, two review subagents and guardrail hooks. Examples are invented.",
+  "contextFileName": "GEMINI.md"
+}
