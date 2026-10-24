@@ -70,6 +70,11 @@ def _read(path: str) -> str:
         return fh.read()
 
 
+def _read_bytes(path: str) -> bytes:
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
 def _toml_str(s: str) -> str:
     return json.dumps(s, ensure_ascii=True)
 
@@ -187,7 +192,7 @@ def gen_gemini_app(stage: str, skills: List[Skill], core_dir: str, version: str)
     try:
         for s in skills:
             files = compile_skill(s, core_dir, tmp)
-            data = {rel: open(os.path.join(tmp, s.name, rel), "rb").read() for rel in files}
+            data = {rel: _read_bytes(os.path.join(tmp, s.name, rel)) for rel in files}
             zp = os.path.join(base, "zips", s.name + ".zip")
             write_zip(zp, data)
             sizes[s.name] = os.path.getsize(zp)

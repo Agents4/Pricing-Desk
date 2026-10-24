@@ -127,9 +127,13 @@ def doctor(root: str) -> int:
     if os.path.isfile(a):
         n = len(open(a, encoding="utf-8").read().splitlines())
         (note if n > 220 else ok)("AGENTS.md is %d lines%s" % (n, " (keep it a router, under about 200)" if n > 220 else ""))
-    for rel in manifest.get("protect", []):
-        if not os.path.isdir(os.path.join(root, rel)):
-            note("protected folder %s does not exist (created by new-instance)" % rel)
+    if os.path.isfile(os.path.join(root, ".pricing-desk-instance.json")):
+        for rel in manifest.get("protect", []):
+            if not os.path.isdir(os.path.join(root, rel)):
+                note("protected folder %s does not exist" % rel)
+        gov = os.path.join(root, "workspace", "context-library", "pricing-governance.md")
+        if os.path.isfile(gov) and "status: template" in open(gov, encoding="utf-8").read():
+            note("pricing-governance.md is still a template: run pd-setup before relying on approval routes")
 
     v = read_version(root)
     gp = os.path.join(root, "gemini-extension.json")

@@ -1,0 +1,1 @@
+A travel agency customer asks for a much higher rate limit on the shopping API and says they want to "keep the fare responses for analysis". Their current plan is the standard booking tier. They send about 40,000 searches a day and book about 200 trips a day. Price it.
