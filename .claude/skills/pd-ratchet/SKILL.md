@@ -31,7 +31,7 @@ What happened (one or two sentences), the output or decision involved, what was 
 
 1. **State the miss** in one sentence with the evidence (F/I/A/U). Do not blame a person.
 2. **Trace to a stage** of the life of a price: intake, fact base, value, research, architecture, test, govern, release, deal desk, monitor, learn.
-3. **Trace to the cause** — pick one: a rule was missing; a rule existed but had no check; a skill step was missing or unclear; a company value was wrong or Unknown; an input was bad; the model estimated instead of computing; the user's context was not loaded.
+3. **Trace to the cause**, pick one: a rule was missing; a rule existed but had no check; a skill step was missing or unclear; a company value was wrong or Unknown; an input was bad; the model estimated instead of computing; the user's context was not loaded.
 4. **Choose the smallest change that would have caught it**, from this list: add an eval case (always, if the miss can be written as input and expected checks); change a skill step; add or sharpen a rule and its check; fix a context library value (needs the user's approval); or no change, with the reason.
 5. **Draft the change.** For an instance, skill changes go in `local/skills/`; changes to the product (`core/`) are proposed as text for the product owner. Never edit `core/` from an instance.
 6. **Log the lesson**: append one row to `workspace/context-library/lessons.md`: date, what happened, stage, what changed. Ask before writing.

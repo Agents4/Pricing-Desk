@@ -87,5 +87,18 @@ class RepoTests(unittest.TestCase):
             shutil.rmtree(d, ignore_errors=True)
 
 
+
+class TestThresholdLint(unittest.TestCase):
+    def test_threshold_warning(self):
+        import tempfile
+        from pdos.skills import load_skill, validate_skill
+        with tempfile.TemporaryDirectory() as td:
+            d = os.path.join(td, "demo-skill")
+            os.makedirs(d)
+            open(os.path.join(d, "SKILL.md"), "w").write("---\nname: demo-skill\ndescription: A demo skill that checks things. Use when you test the threshold lint on the skill validator.\nmetadata:\n  version: \"1.0.0\"\n---\n\n# Demo\n\n## When to use\nx\n\n## Procedure\nReopen when costs move more than 20 percent.\n\n## Output\nx\n\n## Quality gate\nx\n")
+            issues = validate_skill(load_skill(d), os.path.join(td, "core"))
+            self.assertTrue(any(i.code == "SK090" for i in issues))
+
+
 if __name__ == "__main__":
     unittest.main()

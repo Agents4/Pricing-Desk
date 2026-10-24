@@ -1,6 +1,6 @@
 {
   "name": "pricing-desk",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Pricing Desk OS for a travel-technology (GDS) company: skills, rhythms and playbooks for API access, software, services and data products. Prices the scope granted to the customer. Rights held are assessed in the separate Rights Desk. Examples are invented.",
   "contextFileName": "GEMINI.md"
 }

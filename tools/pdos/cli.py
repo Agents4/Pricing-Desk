@@ -96,6 +96,26 @@ def cmd_release(args) -> int:
     return 0
 
 
+def cmd_notebook_pack(args) -> int:
+    from .notebook import build_account_pack, build_company_pack
+    root = os.path.abspath(args.workspace) if args.workspace else (os.getcwd() if os.path.isdir(os.path.join(os.getcwd(), "workspace")) else repo_root())
+    core = os.path.join(repo_root(), "core")
+    if args.account:
+        out = args.out or os.path.join(root, "dist", "notebook-packs", "account-" + args.account)
+        written = build_account_pack(root, core, args.account, out)
+    elif args.company:
+        out = args.out or os.path.join(root, "dist", "notebook-packs", "company-playbook")
+        written = build_company_pack(root, core, out)
+    else:
+        print("choose --account <slug> or --company")
+        return 1
+    print("wrote %d source file(s) to %s" % (len(written), out))
+    for fn, w in written:
+        print("  %-48s %7d words" % (fn, w))
+    print("These packs can hold floors and customer prices. Share only with the deal desk and the Pricing Council.")
+    return 0
+
+
 def cmd_list(args) -> int:
     for s in discover_skills(repo_root()):
         print("%-30s %-5s /%s" % (s.name, s.origin, s.command))
@@ -131,6 +151,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     rl = sub.add_parser("release", help="write a release tarball")
     rl.add_argument("--out")
     rl.set_defaults(fn=cmd_release)
+    nb = sub.add_parser("notebook-pack", help="compile a Gemini Notebook source pack from the workspace")
+    nb.add_argument("--account", help="account folder slug under workspace/accounts")
+    nb.add_argument("--company", action="store_true", help="company pack from the context library, price book and decision log")
+    nb.add_argument("--out")
+    nb.add_argument("--workspace", help="folder that contains workspace/")
+    nb.set_defaults(fn=cmd_notebook_pack)
     l = sub.add_parser("list", help="list skills and their slash commands")
     l.set_defaults(fn=cmd_list)
     args = p.parse_args(argv)

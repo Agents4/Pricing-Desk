@@ -36,7 +36,7 @@ If the price book version or deal log is missing, state which analyses you can a
 
 ## Procedure
 
-1. **Reconcile first.** Check totals against finance revenue if provided. Report row counts, nulls, duplicates, and unmatched products. Stop and report if the reconciliation gap exceeds 1 percent of billed revenue, since every later figure inherits it.
+1. **Reconcile first.** Check totals against finance revenue if provided. Report row counts, nulls, duplicates, and unmatched products. Stop and report if the reconciliation gap exceeds the tolerance set in `pricing-governance.md` or by the user (ask if Unknown), since every later figure inherits it.
 2. **Rebuild list value** for each line from the price book version in force on the invoice date.
 3. **Build the waterfall with code**: list value, then approved discounts, then unapproved or unexplained discount, then credits and adjustments, then billing and metering gaps, to realized revenue. Report in USD and as a percent of list.
 4. **Cut it** by product family, segment, discount tier, customer (top 20), contract vintage, and sales owner if provided.

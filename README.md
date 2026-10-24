@@ -1,68 +1,84 @@
-# Pricing desk package
+# Pricing Desk OS
 
-Everything built for the travel-technology pricing desk, in one place. Prices, customers and agreements in the examples are invented.
+An operating system for the pricing desk of a travel-technology (GDS) company. It prices API access, premium software, services and data products, with proven frameworks, a calendar of rhythms and 28 skills. Prices, customers and agreements in the examples are invented.
 
-This package prices products and services: API access, premium software, services and data products. It assumes we hold the rights to sell what it prices. The rights we hold on data are assessed by the product manager in a separate package, the **Rights Desk** (Agents4/Rights-Desk). The two meet at one hand-off file, `product_rights_handoff.csv`.
+The desk prices what the customer is **granted**. For data and API lines each price states the right it covers. Whether we hold that right is the product manager's call, assessed in the separate **Rights Desk** package (Agents4/Rights-Desk). The two meet at one hand-off list (`product_rights_handoff.csv`).
 
-## 1. Blueprint (online document)
-Pricing desk blueprint: mandate, tasks, responsibilities, operating model, roles, skills, KPIs, 90-day plan.
-https://claude.ai/code/artifact/8dc08cc2-0cf5-41ac-8250-eded39f28038 (private to the author; it is not stored in this repo)
+Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product contains no default threshold. Blank means Unknown.
 
-## 2. AI skills (28 skills in skills/, ready-to-upload zips in dist/gemini-app/zips/)
-| Skill | Use it to |
+## Start
+
+Install the Gemini CLI extension, or use the skills where your company runs them (`adapters/google/README.md`):
+
+```
+gemini extensions install https://github.com/Agents4/Pricing-Desk
+```
+
+Then ask for `pd-start` (`/pricing:start`): it shows what is due today, this week and this month. First time: `pd-setup` (`/pricing:setup`) interviews you one question at a time and fills the context library.
+
+## The rhythms
+
+| Rhythm | Skills that run it |
 |---|---|
-| deal-desk-review | Review a non-standard deal, route approvals; asks the purpose of new API access |
-| price-realization-analysis | Find where list price leaks before it is realized |
-| api-usage-tier-fit | Check customers sit in the right API tier; flag possible data collection through the API |
-| price-change-proposal | Build and justify a price change |
-| wtp-study-design | Design and analyze willingness-to-pay research |
-| data-price-setting | Work out what to charge: corridor, granted-right ladder, sensitivities (any product) |
-| price-book-import | Bring an existing price book into the standard format, check it, and write the hand-off list for the product manager |
-| price-book-builder | Build and check the price book for any product, with strategy and release checks |
-| data-license-pricing | Price a customer's data request, or an API request that would collect data |
+| Daily deal desk | `deal-desk-triage`, `account-price-fit`, `deal-desk-review`, `api-access-request`, `data-license-pricing` |
+| Weekly review | `weekly-pricing-review`, `price-realization-analysis`, `api-usage-tier-fit` |
+| Monthly Pricing Council | `council-decision-pack`, `price-change-proposal`, `pricing-stakeholder-review` |
+| Quarterly review | `quarterly-price-review`, `competitive-price-scan`, `pricing-win-loss`, `analog-research` |
+| Annual release | `price-book-release`, `price-book-import`, `price-book-builder`, `rights-handoff` |
+| New product or construct | `analog-research`, `value-metric-design`, `data-price-setting`, `data-product-valuation`, `packaging-design`, `wtp-study-design` |
+| Running the OS | `pd-start`, `pd-setup`, `pd-ratchet`, `pd-skill-author` |
 
-Suggested order, starting from an existing price book: price-book-import, then price-book-builder (strategy check). Give product_rights_handoff.csv to the product manager.
-Suggested order for a new product: data-price-setting, then price-book-builder, then data-license-pricing for each deal.
+The full method is in `core/methodology/`: the eleven-stage spine, the rhythms, and the frameworks table with the verification status of every source. Design history is in `design/`.
 
-### Pricing the scope the customer gets
-For data and API products, every price covers a stated right: what the customer may do with the data or the API responses. The price book records it in the `conferred_right` column, using nine rights: internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding and ai_evaluation. `internal_use` is the base and the narrowest. Each broader right is a separate line priced above it.
+## The rules that never change
 
-API access needs the most care. Serving the customer's own live transactions is the standard use. Keeping responses beyond the session, bulk extraction, rebuilding or reselling data, and feeding AI are data rights, and some customers ask for API access only to collect data. The price book prices them at the data-licence rate with a minimum commitment, a retention term and audit. `api-usage-tier-fit` looks for the usage pattern (distinct-query ratio, look-to-book, volume per key) and flags it as a question to confirm, not a finding. See `skills/price-book-builder/references/granted-scope.md` and `api-access-scope.md`.
+1. Answer first; name the decision and who decides.
+2. Tag every number F, I, A or U. Computed numbers come from scripts.
+3. Price the scope: a data or API price states the right it grants. An API price buys the use it names; collecting or keeping data is a data licence with a minimum commitment, a retention term and audit.
+4. Recommend only. The Pricing Council approves.
+5. List price is independent of the account. The account enters only at the deal desk, as a give tied to a get, inside the approved band.
+6. Rights questions go to the product manager.
+7. Public sources only for outside research, with URL and access date.
 
-### Checks
-- check_price_book.py, strategy mode (default): a missing floor price, or a data or API line with no stated right, is a warning.
-- check_price_book.py --mode release: those two are errors. Run it before a price book goes out for quoting.
-- Always errors: overlapping tiers, unit price rising with volume, volume cliffs, floor above list, duplicates, a broader right priced below internal use.
+Full text: `core/shared/operating-rules.md`.
 
-Scripts inside skills (run with python3):
-- price-book-import/scripts/import_price_book.py --in LEGACY.xlsx --out-dir OUT imports an existing price book and writes product_rights_handoff.csv (example: price-book-import/examples/legacy-price-book.csv).
-- data-price-setting/scripts/price_corridor.py --in examples/air-shopping-insights.json
-- price-book-builder/scripts/check_price_book.py --pricebook PRICEBOOK.csv [--mode strategy|release] [--lines-csv OUT.csv]
+## The nine rights
 
-## 3. Microsoft Copilot guide (copilot-guide/)
-For use without creating agents.
-- Copilot-Guide.docx: setup in about 20 minutes, the routine for each task, number checks, data handling, troubleshooting.
-- Copilot-Playbooks.docx: playbooks with a copy-and-paste prompt for each. Add it to a Copilot Notebook as a reference.
-- custom-instructions.txt: paste into Copilot custom instructions.
-- notebook-instructions.txt: paste into the Notebook's instructions.
-- Copilot-Guide.md and Copilot-Playbooks.md: the same text as the .docx files, readable on GitHub.
-- source/: the Node scripts that build the two .docx files (npm install docx, then node guide.js OUT.docx and node playbooks.js OUT.docx from inside source/). content.js holds the paste-in instructions and the playbook prompts.
-Copilot cannot load the Claude skills or run the scripts. Use it to draft and extract, and use the scripts or Excel formulas for numbers that matter.
+internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding, ai_evaluation. `internal_use` is the narrowest; each broader right is a separate line priced above it. See `skills/price-book-builder/references/granted-scope.md` and `api-access-scope.md`.
 
-## 4. Gemini CLI extension (repo root)
-This repo is also a Gemini CLI extension. Install it with:
-- gemini extensions install https://github.com/Agents4/Pricing-Desk
-- or, from a clone for development: gemini extensions link .
-Restart the CLI after installing. The extension carries:
-- GEMINI.md: standing desk rules (price the scope, API price buys the use it states, compute don't estimate, recommend only).
-- skills/: the nine skills, loaded on demand.
-- commands/pricing/: /pricing:deal-review, :realization, :tier-fit, :price-change, :wtp-study, :import-price-book, :price-setting, :price-book, :licence-request.
-- agents/: price-book-checker (runs the checker script only). Gemini CLI marks subagents as a preview feature and may need them enabled in settings.
-- hooks/: a BeforeTool guard that blocks write_file and replace edits that set a price book line to Approved. It is a guardrail against model mistakes, not a security control: it does not see shell commands. The Pricing Council can set PRICING_DESK_COUNCIL=1 to override.
+## Scripts
 
-### Upgrading from 0.2.0
-Version 0.3.0 moved the rights work out. These are no longer in this extension: the `dataset-intake-register` skill, the `/pricing:register-intake` and `/pricing:rights-lookup` commands, the `rights-reviewer` subagent, the data rights register example, the SharePoint kit, and the `legal_confirmed` hook. Install the Rights Desk for them. If Gemini CLI warns about a skill conflict, an older copy of a skill is in `~/.gemini/skills`; move it out. After upgrading, run `gemini extensions update pricing-desk`.
+Run with python3 from the skill folder. Examples sit in each skill's `examples/`.
 
-## Notes
-- Only the Pricing Council sets a line to Approved.
-- Rights held on the data (what we may do with it, given suppliers and contributing customers) are the Rights Desk's job. This package names the right each price grants and hands that list over.
+| Script | Does |
+|---|---|
+| `data-price-setting/scripts/price_corridor.py` | Corridor from cost floor to customer value |
+| `price-book-builder/scripts/check_price_book.py` | Price book checks; `--mode release` makes a missing floor or granted right an error |
+| `price-book-import/scripts/import_price_book.py` | Import an existing price book; writes the hand-off list |
+| `account-price-fit/scripts/account_waterfall.py` | Account-level economics of options for an add-on |
+| `deal-desk-triage/scripts/triage_rank.py` | Rank open requests and route them |
+| `api-access-request/scripts/harvest_screen.py` | Look-to-book and distinct-query screen; flags are questions to confirm |
+| `weekly-pricing-review/scripts/weekly_roll.py` | Realization rate by week, family and cause |
+| `pricing-win-loss/scripts/winloss_tally.py` | Won and lost deals by pricing cause |
+| `price-book-release/scripts/price_book_diff.py` | Change log between two price book versions |
+| `price-book-release/scripts/notice_calendar.py` | Who must be told by when, from contract terms |
+| `rights-handoff/scripts/rights_list.py` | Hand-off list and answers read back |
+| `value-metric-design/scripts/metric_scorecard.py` | Score candidate value metrics |
+| `data-product-valuation/scripts/valuation.py` | Cost, market and income approaches |
+| `competitive-price-scan/scripts/check_scan_log.py`, `analog-research/scripts/check_analogs.py` | Source and date checks for research |
+
+## Tools and checks
+
+`python3 tools/pdos.py` has: `validate`, `build` (`--check` for drift), `doctor`, `lint <file>`, `evals --coverage`, `notebook-pack`, `new-instance`, `upgrade-instance`, `release`, `list`. Tests: `python3 -m unittest discover -s tests`. Edit `core/`, then build; never edit generated folders.
+
+## Platforms
+
+Gemini CLI extension (this repo root), Antigravity CLI (`.agents/skills/`), Gemini app skills (zips in `dist/gemini-app/zips/`), Gemini Notebook packs (`dist/notebook-packs/`, `notebook-pack`). Details and the verify list: `adapters/google/`. The Microsoft Copilot guide in `copilot-guide/` is legacy (`copilot-guide/LEGACY.md`).
+
+The extension also carries a guard hook that blocks edits setting a price book line to Approved; the Council overrides with `PRICING_DESK_COUNCIL=1`. It guards against model mistakes, not against a person.
+
+## Upgrading
+
+From 0.2.0: the rights work moved to the Rights Desk (`dataset-intake-register`, `/pricing:register-intake`, `/pricing:rights-lookup`, the `rights-reviewer` subagent and the `legal_confirmed` hook are gone). If Gemini CLI warns about a skill conflict, move the older copy out of `~/.gemini/skills`. Then run `gemini extensions update pricing-desk`. From 0.4.0: run `upgrade-instance`; `workspace/` and `local/` are untouched.
+
+More: `docs/architecture.md`, `docs/rollout-playbook.md`, `docs/security-and-governance.md`.

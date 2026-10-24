@@ -54,7 +54,7 @@ Context library files read: `pricing-governance.md`, `deal-structures.md` (notic
 5. **Notice calendar**.
 6. **Risk register.**
 7. **Communication outline.**
-8. **Post-change monitoring plan**: metrics and thresholds at 30, 60, and 90 days.
+8. **Post-change monitoring plan**: metrics, checkpoints and thresholds agreed with the Council (Unknown until set).
 9. **Inputs and assumptions used.**
 
 ## Quality gate

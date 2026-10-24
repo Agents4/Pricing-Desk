@@ -26,7 +26,7 @@ from typing import Dict, List, Optional
 
 from .skills import Skill, compile_skill, discover_skills, validate_collection
 
-ALL_TARGETS = ["extension", "claude", "agents", "gemini-app"]
+ALL_TARGETS = ["extension", "claude", "agents", "gemini-app", "notebook"]
 ZIP_DATE = (2026, 1, 1, 0, 0, 0)
 REPO_ONLY_RE = re.compile(r"<!--\s*repo-only:start\s*-->.*?<!--\s*repo-only:end\s*-->\s*", re.DOTALL)
 JUNK_DIRS = {"__pycache__", ".DS_Store"}
@@ -220,6 +220,7 @@ MANAGED_DIRS = {
     "claude": [".claude/skills"],
     "agents": [".agents/skills"],
     "gemini-app": ["dist/gemini-app"],
+    "notebook": ["dist/notebook-packs"],
 }
 MANAGED_FILES = {"extension": ["gemini-extension.json", "GEMINI.md"]}
 
@@ -253,6 +254,9 @@ def build(root: str, targets: Optional[List[str]] = None, check: bool = False, q
             gen_skills(stage, ".agents/skills", skills, core_dir)
         if "gemini-app" in targets:
             gen_gemini_app(stage, skills, core_dir, version)
+        if "notebook" in targets:
+            from .notebook import build_coach_pack
+            build_coach_pack(core_dir, skills, os.path.join(stage, "dist", "notebook-packs", "pricing-coach"), version)
 
         drift: List[str] = []
         for t in targets:

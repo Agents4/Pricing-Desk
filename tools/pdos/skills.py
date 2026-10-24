@@ -19,6 +19,8 @@ from .mdparse import split_frontmatter
 SPEC_KEYS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REF_RE = re.compile(r"(?<![\w/.-])((?:references|assets|scripts)/[A-Za-z0-9_./-]*[A-Za-z0-9_])")
+THRESHOLD_RE = re.compile(r"\b\d+(\.\d+)? ?(%|percent|days?)\b", re.IGNORECASE)
+NOT_A_THRESHOLD_RE = re.compile(r"(for example|e\.g\.|Unknown|invented|\bn=)", re.IGNORECASE)
 IGNORE_NAMES = {".DS_Store", "Thumbs.db", "__pycache__", ".gitkeep"}
 REQUIRED_SECTIONS = [
     ("SK030", r"^##\s+When to use"),
@@ -189,6 +191,11 @@ def validate_skill(skill: Skill, core_dir: str) -> List[Issue]:
     for d in sorted(dests):
         if d not in body_refs:
             warn("SK051", "included %s is never referenced in the body" % d)
+    # company values come from the context library (rule 14): flag bare numeric thresholds
+    for n, line in enumerate(skill.body.splitlines(), 1):
+        m = THRESHOLD_RE.search(line)
+        if m and not NOT_A_THRESHOLD_RE.search(line):
+            warn("SK090", "line %d has a numeric threshold or target (%s); company values come from the context library, otherwise say Unknown" % (n, m.group(0)))
     for root, _, files in os.walk(skill.dir):
         for f in files:
             if f in IGNORE_NAMES:

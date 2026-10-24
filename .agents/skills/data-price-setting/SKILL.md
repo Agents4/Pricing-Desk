@@ -59,7 +59,7 @@ Floor per unit = (fixed cost spread over expected units + variable cost + cannib
 
 ### 3. Quantify customer value
 
-For each segment, estimate the yearly value one buyer gets at the usage you expect. Follow `references/value-quantification.md`. Start from a measurable outcome (cost avoided, revenue enabled, time saved), not from the data's features. State the capture share (the part of the value you charge for). Typical starting points are 10 to 30 percent; customers need a clear return to buy. Mark the source of each figure, and push estimates toward interviews and pilots.
+For each segment, estimate the yearly value one buyer gets at the usage you expect. Follow `references/value-quantification.md`. Start from a measurable outcome (cost avoided, revenue enabled, time saved), not from the data's features. State the capture share (the part of the value you charge for). It is the Council's or the requester's call: do not assume a typical figure, and show the corridor at the shares they name. Customers need a clear return to buy. Mark the source of each figure, and push estimates toward interviews and pilots.
 
 Value depends on coverage. Express value at a reference coverage and let the calculator scale it to the coverage you can actually deliver.
 
@@ -95,7 +95,7 @@ Set a pilot plan: three to five design partners across segments, the recommended
 
 ### 9. Hand off
 
-Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the open evidence list. Then use `price-book-builder` to add volume tiers, discount bands, terms, and the validation check. Reopen this skill when coverage changes, costs move more than 20 percent, or a pilot result disagrees with the corridor.
+Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the open evidence list. Then use `price-book-builder` to add volume tiers, discount bands, terms, and the validation check. Reopen this skill when coverage changes, costs move beyond the change threshold in `pricing-governance.md` (Unknown if blank), or a pilot result disagrees with the corridor.
 
 ## Output
 
