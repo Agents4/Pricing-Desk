@@ -4,10 +4,13 @@ All money fields use one currency. Unit means the value metric chosen in step 1.
 
 | Field | Meaning |
 |---|---|
-| `product`, `dataset_id`, `currency`, `unit` | Labels. `unit` is the value metric, e.g. "market-year". |
+| `product`, `currency`, `unit` | Labels. `unit` is the value metric, e.g. "market-year". |
+| `dataset_id`, `product_id`, `product_type` | Optional. `dataset_id` marks a product that carries data, so rights apply. Leave it out for API access, software or services. |
 | `illustrative` | `true` adds a warning banner to the report. Use for invented examples. |
-| `base_right` | The right the corridor prices. Default `internal_use`. |
-| `eligible_rights` | Rights the register allows (Granted or Conditional, Legal confirmed). Required. The base right must be in it. |
+| `base_right` | The right the corridor prices. Default `internal_use` for data products. |
+| `eligible_rights` | Rights confirmed by Legal (Granted or Conditional). Priced as Confirmed. Optional. |
+| `prohibited_rights` | Rights Legal has confirmed as Prohibited. Shown as Blocked, not priced. Optional. The base right cannot be in it. |
+| (any other right) | For a data product, any right in `rights[]` that is in neither list is priced as Provisional. The report carries a "RIGHTS PROVISIONAL" banner when the base right is not confirmed. |
 | `coverage.current` | Share of volume (or parties) the product can include today, from the register. |
 | `coverage.reference` | The coverage the value estimates assume. |
 | `coverage.resolved` | Coverage if open rights items are resolved. Used for the sensitivity. |
@@ -25,6 +28,6 @@ All money fields use one currency. Unit means the value metric chosen in step 1.
 | `weights` | Blend weights for `value`, `market`, `wtp`. Default 0.4, 0.3, 0.3, renormalized over available anchors. |
 | `rights[]` | Extra rights to price: `right`, `incremental_value_per_unit`, `capture_share` (default 0.3), `incremental_cost_per_unit`, `basis`. |
 
-Outputs: a Markdown report (also printed), optional JSON (`--json`), and optional price book lines (`--csv`) in the `data-price-book-builder` format, all Draft, single tier.
+Outputs: a Markdown report (also printed), optional JSON (`--json`), and optional price book lines (`--csv`) in the `price-book-builder` format, all Draft, single tier, with a note on lines whose rights are provisional.
 
 Confidence score: anchors available (3 = 2 points, 2 = 1), value evidence quality (0.9 or more = 2, 0.6 or more = 1), willingness-to-pay points (15 or more = 2, 5 or more = 1), comparables (two or more at 0.6 average comparability = 1), minus 1 if anchors differ by more than 2x. High needs 6, Medium 3 to 5, Low below 3.

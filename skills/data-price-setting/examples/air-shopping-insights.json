@@ -122,7 +122,17 @@
       "incremental_value_per_unit": 6000,
       "capture_share": 0.25,
       "incremental_cost_per_unit": 800,
-      "basis": "not eligible; shows blocking"
+      "basis": "resale case: lets buyers pass the data on (invented); Legal has confirmed this right as Prohibited, so it shows as Blocked"
+    },
+    {
+      "right": "ai_retrieval_grounding",
+      "incremental_value_per_unit": 1500,
+      "capture_share": 0.25,
+      "incremental_cost_per_unit": 120,
+      "basis": "agent grounding case: assistants answer fare-trend questions from this data (invented). Not yet in the register, so it is priced as Provisional"
     }
+  ],
+  "prohibited_rights": [
+    "redistribution_resale"
   ]
 }

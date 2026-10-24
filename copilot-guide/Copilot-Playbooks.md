@@ -13,7 +13,8 @@
 
 - **Inputs:** use only files named in the prompt or in the notebook. If a needed input is missing, list it and stop. Do not guess.
 - **Evidence:** cite the file and location (sheet and cell, page, clause) for every figure and every contract statement.
-- **Unknown is the default:** silence in a contract is never permission. Never say a use of data is allowed unless the register shows Granted or Conditional and Legal confirmed is Yes.
+- **Unknown is the default:** silence in a contract is never permission. Never say a use of data is allowed unless the register shows Granted or Conditional and Legal confirmed is Yes. You may still price an unconfirmed right as a strategy: label it Provisional and say it is not cleared to quote.
+- **Rights apply only to data:** software, services and API access with no third-party content do not need the rights register.
 - **No legal conclusions:** summarize what the document says and where, then write the question for Legal.
 - **Calculations:** show the inputs, the formula in words, and the result. No estimates in prose. Label every assumption.
 - **Recommend only:** named people approve. Do not draft anything to send to a customer.
@@ -22,13 +23,13 @@
 
 ### Vocabulary
 
-| Term                       | Meaning                                                                                                                                                                                                                                                                                               |
-|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Use rights (nine)          | internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding, ai_evaluation. Each AI use is its own right.                                                                          |
-| Statuses                   | Granted, Conditional (record the conditions), Prohibited, Unknown (the default).                                                                                                                                                                                                                      |
-| Most to least restrictive  | Prohibited, Unknown, Conditional, Granted.                                                                                                                                                                                                                                                            |
-| Eligible to sell           | Granted or Conditional, and legal_confirmed = Yes. Everything else is not for sale.                                                                                                                                                                                                                   |
-| Placeholder approval tiers | Use only if the desk has no approval matrix, and say so. Tier 0: discount up to 10 percent. Tier 1: beyond the band. Tier 2: above 250,000 USD total contract value, multi-year, or a cross-family bundle. Tier 3: above 1 million USD, below floor, MFN, exclusivity, or data redistribution rights. |
+| Term                       | Meaning                                                                                                                                                                                                                                                                                                                                                                                            |
+|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Use rights (nine)          | internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding, ai_evaluation. Each AI use is its own right.                                                                                                                                                                       |
+| Statuses                   | Granted, Conditional (record the conditions), Prohibited, Unknown (the default).                                                                                                                                                                                                                                                                                                                   |
+| Most to least restrictive  | Prohibited, Unknown, Conditional, Granted.                                                                                                                                                                                                                                                                                                                                                         |
+| Rights basis               | Confirmed: Granted or Conditional, and legal_confirmed = Yes. Provisional: anything else, including Unknown and not yet in the register. Contradicted: the evidence says Prohibited but Legal has not confirmed. Blocked: Legal confirmed Prohibited. Confirmed is cleared to quote. Provisional and Contradicted may be priced as a strategy but are not cleared to quote. Blocked is not priced. |
+| Placeholder approval tiers | Use only if the desk has no approval matrix, and say so. Tier 0: discount up to 10 percent. Tier 1: beyond the band. Tier 2: above 250,000 USD total contract value, multi-year, or a cross-family bundle. Tier 3: above 1 million USD, below floor, MFN, exclusivity, or data redistribution rights.                                                                                              |
 
 ## Playbook 1: Register intake from agreements
 
@@ -61,9 +62,9 @@ Follow Playbook 1: Register intake. Agreement: \[file name\]. Party: \[name\], t
 
 ## Playbook 2: Price setting
 
-**Purpose:** work out what to charge for a data product, with a floor, a value cap and a recommended price, before building a price book.
+**Purpose:** work out what to charge for a product or data licence, with a floor, a value cap and a recommended price, before building a price book.
 
-**Attach:** cost inputs, customer segments with value estimates and their source, market comparables with a comparability score from 0 to 1, willingness-to-pay points if any, and the list of eligible use rights from the register.
+**Attach:** cost inputs, customer segments with value estimates and their source, market comparables with a comparability score from 0 to 1, willingness-to-pay points if any, and, for data products, which use rights are confirmed by Legal (the rest are Provisional).
 
 ### Steps and formulas
 
@@ -75,62 +76,62 @@ Follow Playbook 1: Register intake. Agreement: \[file name\]. Party: \[name\], t
 6.  **WTP median:** use only with 5 or more points; 15 or more to rely on.
 7.  **Blend:** 40 percent value-based price, 30 percent market reference, 30 percent WTP median. If an anchor is missing, share its weight across the others. Keep the result between the floor and the cap.
 8.  **Realized price** is the blend. **List price** = realized ÷ (1 − expected average discount).
-9.  **Extra use rights:** price of a right = base price + capture share × extra value per unit + extra cost per unit ÷ (1 − royalty share − margin floor). Price only rights that are eligible; list the rest as blocked.
+9.  **Extra use rights:** price of a right = base price + capture share × extra value per unit + extra cost per unit ÷ (1 − royalty share − margin floor). Price confirmed rights. Price unconfirmed rights too, labeled Provisional. Do not price a right Legal has confirmed as Prohibited.
 10. **Sensitivity:** value capture ±20 percent, costs +20 percent, demand −30 percent, market reference −20 percent, and coverage if open rights items are resolved.
 
 **Reading the result:** if the floor is above the cap there is no viable price (options: cut cost or scope, aim at a higher-value segment or right, spread cost across products, re-check the value estimate). If anchors differ by more than 1.5 times, find out why before averaging. If segment value-based prices differ by more than 1.5 times, consider fenced segment prices.
 
 **Confidence:** High needs three anchors, value figures from pilots or contract data, 15 or more WTP points and two or more good comparables. Value figures that are only estimates, or fewer than 5 WTP points, mean Low or Medium. Present Low as provisional.
 
-**Output order:** headline price and confidence, corridor table, segments, use-right ladder with blocked rights, sensitivity table, flags and next evidence, pilot plan with a decision rule, inputs and assumptions.
+**Output order:** headline price and confidence, corridor table, segments, use-right ladder with the rights basis of each step, sensitivity table, flags and next evidence, pilot plan with a decision rule, inputs and assumptions.
 
 ### Check before you use it
 
 - Recompute the floor and one segment's value-based price yourself in Excel.
 - Every input has a source; invented inputs are labeled as assumptions.
-- No right is priced unless the register lists it as eligible.
+- Every right not confirmed by Legal is labeled Provisional. Nothing is priced for a right Legal has confirmed as Prohibited.
 - For the real price decision, run the price corridor script (ask someone with Python, or use Claude) and compare with this draft.
 
 **Prompt to copy**
 
-Follow Playbook 2: Price setting. Product: \[name\]. Inputs: \[file\]. Eligible use rights from the register: \[list or file\]. Build one table with: cost floor, value-based price and cap per segment, market reference, WTP median (only with 5 or more points), blended realized price, and list price at \[15\] percent discount. Write each formula in words and show the inputs next to each result. If the floor is above the cap, say there is no viable price and list options. Price extra use rights only if they are eligible. End with confidence (high, medium, low), the weakest input, and the evidence to collect next.
+Follow Playbook 2: Price setting. Product: \[name\]. Inputs: \[file\]. Rights confirmed by Legal: \[list, or "none yet"\]. Build one table with: cost floor, value-based price and cap per segment, market reference, WTP median (only with 5 or more points), blended realized price, and list price at \[15\] percent discount. Write each formula in words and show the inputs next to each result. If the floor is above the cap, say there is no viable price and list options. Price extra use rights too: label any not confirmed by Legal as Provisional, and do not price a right Legal has confirmed as Prohibited. End with confidence (high, medium, low), the weakest input, and the evidence to collect next.
 
 ## Playbook 3: Price book
 
-**Purpose:** turn prices into a controlled price book where every line is tied to a dataset and an eligible use right.
+**Purpose:** turn prices into a controlled price book for any product. Data lines are tied to a dataset and a use right and carry a rights basis.
 
-**Attach:** the corridor results from Playbook 2, the register export of eligible rights, existing prices and past deals.
+**Attach:** the corridor results from Playbook 2, the register export if there is one, existing prices and past deals.
 
 ### Steps
 
-1.  Scope: list priceable rights (Granted or Conditional, Legal confirmed) and blocked rights, with the question blocking each.
+1.  Scope: for data lines, label each right Confirmed, Provisional, Contradicted or Blocked, with the open question behind each Provisional one. Price Confirmed and Provisional lines. Do not price Blocked lines.
 2.  Choose the licensing unit, the delivery dimension only if cost or value differs, and the metering source.
 3.  For each dataset set three anchors: floor, reference (median and range of realized comparable deals), value ceiling. Put the list price between floor and ceiling.
 4.  Set the use-right ladder from the value each right adds. Do not apply standard multipliers.
 5.  Add volume tiers with a tier model (all_units or graduated), a floor price per line, discount bands with the approval tier each depth triggers, term discounts, minimum commitments, overage, audit rights, and the conditions that travel with Conditional rights.
-6.  Write the table with columns: line_id, dataset_id, use_right, delivery, unit, tier_min, tier_max, list_price, floor_price, currency, term_months, tier_model, status, version. Leave tier_max blank for the last tier. Status is Draft or Proposed; only the Pricing Council sets Approved.
+6.  Write the table with columns: line_id, product_id, product_type, dataset_id (data lines only), use_right (data lines only), delivery, unit, tier_min, tier_max, list_price, floor_price, currency, term_months, tier_model, status, version. Leave tier_max blank for the last tier. Status is Existing, Draft or Proposed; only the Pricing Council sets Approved.
 7.  Run the manual checks below.
 
 ### Manual checks (report pass or fail per line)
 
-| Check                  | Rule                                                                                                                            |
-|------------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| Register linkage       | Every line has a dataset_id and use_right that exist in the register as Granted or Conditional with Legal confirmed.            |
-| Floor and list         | floor_price is at or below list_price on every line.                                                                            |
-| Tier overlaps and gaps | Within a line, each tier starts right after the previous one ends. No overlaps, no gaps.                                        |
-| Unit price and volume  | Unit price does not rise as volume rises.                                                                                       |
-| Volume cliffs          | In all_units tiers, total cost at the first unit of a higher tier is not below the total cost at the top of the tier before it. |
-| Rights ladder          | No broader right is priced below internal_use for the same dataset.                                                             |
+| Check                  | Rule                                                                                                                                                                                              |
+|------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Rights basis           | Every data line has a rights basis. For a strategy review, Provisional lines pass with a flag. Before the price book goes out for quoting, every data line must be Confirmed. No line is Blocked. |
+| Floor and list         | floor_price is at or below list_price on every line.                                                                                                                                              |
+| Tier overlaps and gaps | Within a line, each tier starts right after the previous one ends. No overlaps, no gaps.                                                                                                          |
+| Unit price and volume  | Unit price does not rise as volume rises.                                                                                                                                                         |
+| Volume cliffs          | In all_units tiers, total cost at the first unit of a higher tier is not below the total cost at the top of the tier before it.                                                                   |
+| Rights ladder          | No broader right is priced below internal_use for the same dataset.                                                                                                                               |
 
-**Output order:** headline, price book table, rationale per line, ladder logic, blocked list with owners, check results, Council decision list, inputs and assumptions.
+**Output order:** headline, price book table, rationale per line, ladder logic, rights basis by line with owners for open questions, check results, Council decision list, inputs and assumptions.
 
 **Prompt to copy**
 
-Follow Playbook 3: Price book. Priceable rights: \[register export, only Granted or Conditional with Legal confirmed\]. Corridor results: \[file\]. Produce the price book table with columns line_id, dataset_id, use_right, delivery, unit, tier_min, tier_max, list_price, floor_price, currency, term_months, tier_model, status (Draft), version. Then run every manual check in the playbook and report pass or fail for each line with the numbers. List blocked rights with the question that blocks each.
+Follow Playbook 3: Price book. Rights register export: \[file, or "none yet"\]. Corridor results: \[file\]. Produce the price book table with columns line_id, product_id, product_type, dataset_id (data lines only), use_right (data lines only), delivery, unit, tier_min, tier_max, list_price, floor_price, currency, term_months, tier_model, status (Draft), version. Then run every manual check in the playbook and report pass or fail for each line with the numbers. Label the rights basis of each data line (Confirmed, Provisional, Contradicted, Blocked) and list the open question behind each Provisional one.
 
 ## Playbook 4: Data licence pricing request
 
-**Purpose:** decide what is being licensed, whether the desk is allowed to license it, and what to charge. The price is proposed; Legal confirms the rights before any quote.
+**Purpose:** decide what is being licensed, whether the rights are confirmed, and what to charge. The price is proposed and may be provisional; Legal confirms the rights before any quote goes to the customer.
 
 **Attach:** the request, the register export, the price book, and customer context.
 
@@ -138,22 +139,23 @@ Follow Playbook 3: Price book. Priceable rights: \[register export, only Granted
 
 1.  Restate the request in a table: dataset, fields, coverage, frequency, term, delivery, intended use.
 2.  Classify each intended use as a use right, quoting the customer's words. Mark ambiguous cases. Show, resell, combine, and any training, retrieval or agent use are separate questions.
-3.  Check each right against the register: allowed, allowed with conditions, not allowed, unknown. Include the register reference.
+3.  Check each right against the register: Confirmed, Provisional (unknown or unconfirmed), Contradicted or Blocked. Include the register reference.
 4.  Check personal data and supplier-confidential fields that need removal or aggregation.
-5.  Only then price from the price book: base subscription, volume tier, use-right uplift, term discount, approved exception band. Show the waterfall. If no rule fits, give a range labeled as a proposal.
+5.  Then price from the price book: base subscription, volume tier, use-right uplift, term discount, approved exception band. Show the waterfall. Label the price Provisional if any right is not Confirmed. If no rule fits, give a range labeled as a proposal.
 6.  Route: standard, Tier 1 or 2 for non-standard terms, Tier 3 for redistribution, AI use, exclusivity or a rights conflict.
 7.  Draft the Legal escalation note: dataset, proposed use, register entry, the question, the deadline.
 
-**Output order:** recommendation (quote, quote with conditions, escalate, decline) and tier, request table, use-right classification, rights check, price and waterfall or the reason none is given, conditions to request from Legal, escalation note, inputs and assumptions.
+**Output order:** recommendation (quote, quote with conditions, provisional price while Legal confirms, decline), whether it is cleared to quote, and tier, request table, use-right classification, rights check, price and waterfall with the rights basis of each line, conditions to request from Legal, escalation note, inputs and assumptions.
 
 ### Check before you use it
 
-- If the register is silent, the answer is "rights unknown, escalate", not a price.
+- If the register is silent, the answer is a Provisional price and "rights unknown, escalate", never "allowed".
+- The recommendation says whether the price is cleared to quote.
 - No contract clauses are drafted.
 
 **Prompt to copy**
 
-Follow Playbook 4: Data licence pricing. Request: \[file or pasted text\]. Register export: \[file\]. Price book: \[file\]. Restate the request, classify each intended use as a use right quoting the customer's words, check each against the register (allowed, allowed with conditions, not allowed, unknown), and only then price from the price book with the waterfall. If any right is unknown, do not price it: write the Legal escalation note instead. Recommend the approval tier and name the rule.
+Follow Playbook 4: Data licence pricing. Request: \[file or pasted text\]. Register export: \[file\]. Price book: \[file\]. Restate the request, classify each intended use as a use right quoting the customer's words, check each against the register (allowed, allowed with conditions, not allowed, unknown), and only then price from the price book with the waterfall. If any right is unknown, price it as Provisional, say it is not cleared to quote, and write the Legal escalation note. Recommend the approval tier and name the rule.
 
 ## Playbook 5: Deal desk review
 
@@ -319,7 +321,7 @@ Follow Playbook 9: WTP study, analyze mode. Responses: \[file\]. Instrument: \[f
 5.  Cap by the dataset ceiling: take the more restrictive of the contract result and the ceiling. A missing or unconfirmed ceiling is Unknown.
 6.  Derived datasets. **Inherit:** take the most restrictive result across the parent datasets for the same use right, then cap by the derived dataset's own ceiling. **Transform** (aggregated or anonymized): the parents decide only whether the party's data may be included, using derivative_data_product (or the specific processing right) for each contributing party; output rights come from the derived dataset's own ceiling. An open processing term is Unknown, so the party is excluded.
 
-**Output:** a table with one row per use right: the result of each step, the final status, and the reason. Anything not confirmed is Unknown. Most to least restrictive: Prohibited, Unknown, Conditional, Granted. Eligible means Granted or Conditional.
+**Output:** a table with one row per use right: the result of each step, the final status, and the reason. Anything not confirmed is Unknown. Most to least restrictive: Prohibited, Unknown, Conditional, Granted. Confirmed means Granted or Conditional with Legal confirmed.
 
 ### Check before you use it
 
@@ -331,9 +333,39 @@ Follow Playbook 9: WTP study, analyze mode. Responses: \[file\]. Instrument: \[f
 
 Follow Playbook 10: Rights lookup. Dataset: \[id\]. Agency: \[id or name\]. Supplier: \[id or name\]. Date: \[today\]. Use right: \[name or "all nine"\]. Files: agreements, exceptions, profile terms and dataset ceilings \[exports\]. Walk the steps in order and show the result of each: active agreement in force, confirmed, profile term, exception override, dataset ceiling, derived-dataset rule. Give the final status per use right and the reason. Anything not confirmed is Unknown.
 
+## Playbook 11: Import an existing price book
+
+**Purpose:** start from the price book the business already uses. Bring it into the standard format, check it, and rank the data products by what their open rights questions put at risk. Do not wait for the register or for Legal.
+
+**Attach:** the price book as Excel or CSV (one sheet), and revenue and customer counts per product if you have them. For a big price book, ask someone to run the import script instead (see the repo), and use this playbook to review the result.
+
+### Steps
+
+1.  Map the columns: product, category, unit, volume band, list price, floor price, term, revenue, customers. Show the mapping and ask for corrections.
+2.  Set product_type for each product: data_license, api_access, software, service or other. Give the words that led to each, and mark any guess as low confidence.
+3.  Write one row per tier with the standard columns (see Playbook 3). Prices written as "\$1,200" become numbers. Bands such as "0 - 1M" and "1M - 10M" become tier_min and tier_max, with the higher tier starting one unit above the boundary. Status is Existing.
+4.  Never invent a price, a floor, a term or a use right. Leave it blank and list it under Missing. Say which tier model you assumed (all_units unless told otherwise).
+5.  Mark rights relevance: data_license = Required. api_access = Possible (do responses carry supplier or third-party content? ask). Software and services = None.
+6.  Run the manual checks from Playbook 3 (floor and list, tier overlaps and gaps, unit price and volume, volume cliffs). Report them as findings about the existing price book.
+7.  List the data products and the possible-data API products, with annual revenue, customers and the use rights the price book states. Rank by annual revenue, putting resale, redistribution, derivative and AI rights ahead of internal use when revenue is similar. This is the proposed order for rights intake.
+
+**Output order:** headline (lines imported, products by type, revenue on lines that need a rights check), the mapping, the standard table, product types with low-confidence guesses, check results, intake priority table, decisions needed, inputs and assumptions, missing.
+
+### Check before you use it
+
+- Row counts and total revenue match the source file.
+- Nothing was invented: every blank in the source is still blank, and listed.
+- Product types are confirmed by someone who knows the products.
+- Nothing is marked Approved and no Legal column is filled in.
+
+**Prompt to copy**
+
+Follow Playbook 11: Import an existing price book. File: \[price book file\]. Sheet: \[name or "first"\]. Do not wait for the register or Legal. Map the columns (product, unit, volume band, list price, floor price, term, revenue, customers). Set product_type for each line (data_license, api_access, software, service, other) and give the words behind it. Output the Playbook 3 columns with status Existing, and use_right only if clearly stated. Never invent a price, floor or term: leave it blank and list it. Run the checks, then rank data products by annual revenue as the rights intake order.
+
 ## Calculations Copilot should not do alone
 
 - The price corridor and use-right ladder for a real decision (use the script or an Excel model, then compare).
 - Effective rights and coverage across many parties (use the resolver).
+- Importing a large price book, or checking one for tier cliffs across hundreds of lines (use the import and checker scripts).
 - Totals over large billing or usage files (use Excel, and ask Copilot for formulas, not values).
 - Anything where two runs give different numbers. Do not use either.

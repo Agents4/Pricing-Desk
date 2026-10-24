@@ -1,0 +1,8 @@
+description = "Import an existing price book, check it, and rank the rights work"
+prompt = """
+Use the price-book-import skill for this request. Follow the pricing desk rules in your context.
+
+File and details (sheet, currency, anything known about product types): {{args}}
+
+Run the importer, then the checker in strategy mode with an exposure report. Do not wait for the register or for Legal. Report the import headline, the consistency findings on the existing price book, the intake priority table, and the decisions needed from me (product types, tier model, floors, whether API responses carry third-party content). Do not set legal_confirmed or any status of Approved.
+"""

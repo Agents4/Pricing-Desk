@@ -13,7 +13,9 @@ Read `references/register-schema.md` first. It defines every sheet, column, the 
 
 - **Bootstrap**: no register exists. Create one, then run intake for the first datasets.
 - **Intake**: add one new dataset.
-- **Backfill**: add many existing datasets. Work in this priority order: datasets already in customer contracts, datasets in live deals, datasets in planned products, everything else. Report coverage after each batch.
+- **Backfill**: add many existing datasets. If an existing price book is the starting point, run the `price-book-import` skill first: it produces `dataset_candidates.csv` (ranked by annual revenue and use-right risk) and `register_backfill.csv` (Unknown rows to start from). Work the ranked list top down. Without a price book, use this order: datasets already in customer contracts, datasets in live deals, datasets in planned products, everything else. Report coverage after each batch. Candidate ids (DS-CAND-...) are replaced with real ids as each dataset is registered.
+
+Pricing does not wait for intake. Provisional prices exist while rights are Unknown; intake turns Unknown into evidence and Legal turns evidence into confirmation. Take the datasets where provisional revenue is largest, or where the evidence already says a sold use may be Prohibited, first.
 
 Ask which mode applies if it is unclear.
 
@@ -81,7 +83,7 @@ Set dataset status to `Draft`, or `In legal review` once the packet is complete.
 1. **Intake summary** (five lines): dataset, source type, status, number of use rights proposed Granted, Conditional, Prohibited, and Unknown, number of open questions.
 2. **Register entry**: the rows ready to add to each sheet (show as tables, and write them into the register file if one was provided, appending only).
 3. **Legal review packet**: one page with the dataset, the proposed use-right matrix with evidence references, the open questions, and the decision requested from Legal.
-4. **Pricing readiness**: which use rights pricing may quote once Legal confirms, and which are blocked.
+4. **Pricing readiness**: which use rights are Confirmed and cleared to quote, which stay Provisional until Legal confirms, and which look Prohibited, with the revenue priced on each if known.
 5. **Inputs and assumptions used**, including any document you could not read.
 
 ## Rules

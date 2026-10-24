@@ -5,14 +5,14 @@ description: Work out what to charge for a data product or data licence before b
 
 # Data Price Setting
 
-Answer one question: **what should we charge, and how sure are we?** The `data-price-book-builder` skill turns prices into a controlled price book; this skill finds the prices. Do this first.
+Answer one question: **what should we charge, and how sure are we?** The `price-book-builder` skill turns prices into a controlled price book; this skill finds the prices. Do this first.
 
-The register decides what can be sold. This skill decides what it is worth. Never reverse the order: a price for a right the register does not allow is not a price.
+The register decides what can be quoted. This skill decides what a product is worth. You can run it before Legal responds: rights not yet confirmed are priced as **Provisional**, and the result says so. A right Legal has confirmed as Prohibited is shown as Blocked and not priced. The corridor method works for any product (API access, software, services, data); the use-right ladder applies only to data.
 
 ## Inputs to collect first
 
 1. **Product and dataset**: the `dataset_id`, what a buyer receives, delivery, refresh, history.
-2. **Eligible use rights** from the data rights register (`Effective_Rights` or the Use_Rights sheet): only Granted or Conditional with `legal_confirmed = Yes`. If none, stop and use `dataset-intake-register`. If the product depends on secondary processing that is still open, treat the affected parties as excluded.
+2. **Rights basis** for data products, from the register (`Effective_Rights` or the Use_Rights sheet): `eligible_rights` are Granted or Conditional with `legal_confirmed = Yes`; `prohibited_rights` are confirmed Prohibited; every other right is Provisional. If there is no register yet, everything is Provisional; start `dataset-intake-register` in parallel. If the product depends on secondary processing that is still open, treat the affected parties as excluded from the confirmed coverage and show the provisional coverage separately. Skip this input for products that carry no data.
 3. **Coverage** from the register's `Coverage_Summary` (share of parties and volume that can be included), the coverage the value estimates assume, and the coverage if open items are resolved.
 4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and Finance's margin floor.
 5. **Customers and value**: segments, how many, how much each would use, and what the product is worth to each per year. Record the source of each estimate: estimate, interview, pilot, or contract data.
@@ -69,7 +69,7 @@ It returns the floor, the value-based price and cap, the market and willingness-
 
 ### 7. Price the use-right ladder from value
 
-Price each additional right as base price + capture share × the extra value per unit that right creates + its extra risk and supplier cost. Do not use standard multipliers. A right not eligible in the register is shown as blocked, with no price. Treat each AI use as its own right, with its own value case.
+Price each additional right as base price + capture share × the extra value per unit that right creates + its extra risk and supplier cost. Do not use standard multipliers. A right Legal has confirmed as Prohibited is shown as blocked, with no price. A right that is not yet confirmed is priced and labelled Provisional. Treat each AI use as its own right, with its own value case.
 
 ### 8. Design the test
 
@@ -77,13 +77,13 @@ Set a pilot plan: three to five design partners across segments, the recommended
 
 ### 9. Hand off
 
-Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the open evidence list. Then use `data-price-book-builder` to add volume tiers, discount bands, terms, and the validation check. Reopen this skill when the register changes coverage or rights, costs move more than 20 percent, or a pilot result disagrees with the corridor.
+Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the open evidence list. Then use `price-book-builder` to add volume tiers, discount bands, terms, and the validation check. Reopen this skill when the register changes coverage or rights, costs move more than 20 percent, or a pilot result disagrees with the corridor.
 
 ## Output format
 
 1. **Headline**: the recommended realized price and list price per unit, the confidence, and the one thing that would change the answer.
 2. **Corridor table** and **segments**.
-3. **Use-right ladder** with the basis for each step and the blocked rights.
+3. **Use-right ladder** with the rights basis (Confirmed or Provisional) and the reasoning for each step, and the blocked rights.
 4. **Sensitivity table** and the value of resolving open rights items.
 5. **Flags and next evidence**.
 6. **Pilot plan and decision rule.**
@@ -92,7 +92,7 @@ Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the o
 ## Rules
 
 - Compute with `scripts/price_corridor.py`. Show the inputs next to the result.
-- Never price a right the register shows as Unknown, Prohibited, or unconfirmed.
+- Price unconfirmed rights as Provisional and say so in the headline. Never price a right Legal has confirmed as Prohibited. Never present a Provisional price as cleared to quote.
 - Label invented, illustrative, or assumed inputs. A worked example is not a quote.
 - Do not present a price as certain when confidence is Low.
 - Prices are proposals. The Pricing Council approves them and Finance confirms margin floors.
