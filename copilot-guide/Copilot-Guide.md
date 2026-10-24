@@ -7,7 +7,7 @@
 - **Copilot drafts, extracts and organizes.** The register, the calculators and Legal decide.
 - **You do not need agents.** A Notebook that holds the playbooks file, saved prompts, and custom instructions gives most of the value.
 - **Numbers get checked.** Copilot can slip on arithmetic. Every price comes from a calculation you can see and recompute.
-- **Copilot proposes rights; Legal confirms them.** Silence in a contract means Unknown.
+- **Copilot proposes rights; Legal confirms them.** Silence in a contract means Unknown. Copilot can still price an unconfirmed right if it labels the price Provisional. Provisional prices are for strategy and for deciding where Legal time goes, not for quoting.
 - **Copilot sees what you can open.** Keep contracts in a locked library so the wrong people cannot pull them into a prompt.
 
 ## 2. What Copilot can and cannot do here
@@ -80,18 +80,19 @@ Bulk effective-rights results (use the resolver)</td>
 
 ## 6. Workflow quick reference
 
-| Playbook               | Attach                                                                      | Check before you use it                                                                      |
-|------------------------|-----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| 1 Register intake      | Agreement, data dictionary, standard profile                                | Every Granted has a quote and location. Silent rights are Unknown. legal_confirmed is blank. |
-| 2 Price setting        | Costs, segments and value sources, comparables, WTP points, eligible rights | Recompute floor and one value price. Inputs have sources. Unsupported inputs labeled.        |
-| 3 Price book           | Corridor results, eligible rights, past deals                               | Each line tied to an eligible right. Floor not above list. No tier overlaps or cliffs.       |
-| 4 Data licence request | Request, register export, price book                                        | Rights checked before price. Unknown means escalate, not quote.                              |
-| 5 Deal desk review     | Deal, price book, approval matrix, comparables                              | Recompute the waterfall. Tier equals first rule tripped.                                     |
-| 6 Price realization    | Billing, price book, deal log                                               | Reconcile first. Stop over 1 percent gap. Approved versus unexplained discount kept apart.   |
-| 7 API tier fit         | Usage, plans, price book, call classes                                      | Call classes defined. Machine traffic labeled "to confirm".                                  |
-| 8 Price change         | Change, customers, contract summary, price book                             | Clause references quoted. Ranges, not points. Legal items escalated.                         |
-| 9 WTP study            | Decision and concept, or responses                                          | Sample size beside every figure. Stated is not forecast.                                     |
-| 10 Rights lookup       | Agreements, exceptions, profile terms, ceilings                             | As-of date stated. No step skipped. Use the resolver for bulk.                               |
+| Playbook               | Attach                                                                                       | Check before you use it                                                                           |
+|------------------------|----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| 1 Register intake      | Agreement, data dictionary, standard profile                                                 | Every Granted has a quote and location. Silent rights are Unknown. legal_confirmed is blank.      |
+| 2 Price setting        | Costs, segments and value sources, comparables, WTP points, which rights Legal has confirmed | Recompute floor and one value price. Inputs have sources. Unconfirmed rights labeled Provisional. |
+| 3 Price book           | Corridor results, register export if any, past deals                                         | Each data line has a rights basis. Floor not above list. No tier overlaps or cliffs.              |
+| 4 Data licence request | Request, register export, price book                                                         | Rights checked. Unknown means a Provisional price and an escalation, never "allowed".             |
+| 5 Deal desk review     | Deal, price book, approval matrix, comparables                                               | Recompute the waterfall. Tier equals first rule tripped.                                          |
+| 6 Price realization    | Billing, price book, deal log                                                                | Reconcile first. Stop over 1 percent gap. Approved versus unexplained discount kept apart.        |
+| 7 API tier fit         | Usage, plans, price book, call classes                                                       | Call classes defined. Machine traffic labeled "to confirm".                                       |
+| 8 Price change         | Change, customers, contract summary, price book                                              | Clause references quoted. Ranges, not points. Legal items escalated.                              |
+| 9 WTP study            | Decision and concept, or responses                                                           | Sample size beside every figure. Stated is not forecast.                                          |
+| 10 Rights lookup       | Agreements, exceptions, profile terms, ceilings                                              | As-of date stated. No step skipped. Use the resolver for bulk.                                    |
+| 11 Import price book   | Existing price book (Excel or CSV), revenue per product                                      | Nothing invented. Blanks listed. Product types confirmed. Row counts match the source.            |
 
 ## 7. Keeping numbers right
 

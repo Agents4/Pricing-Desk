@@ -1,9 +1,8 @@
-description = "Build or check the data price book against the register"
+description = "Build or check the price book (strategy check, or release check before quoting)"
 prompt = """
-Use the data-price-book-builder skill for this request. Follow the pricing desk rules in your context.
+Use the price-book-builder skill for this request. Follow the pricing desk rules in your context.
 
-Request and inputs: {{args}}
+Request and inputs (say strategy or release): {{args}}
 
-If a needed input is missing, list it and stop.
-Run the price book checker and report pass or fail per line.
+Strategy mode is the default: provisional rights are allowed and labelled. Release mode fails lines whose rights are not confirmed. Run the checker, report errors, warnings, the rights basis counts and the top intake priorities, and say which lines are cleared to quote.
 """
