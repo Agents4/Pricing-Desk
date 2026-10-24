@@ -1,18 +1,18 @@
 ---
 name: data-price-setting
-description: Work out what to charge for a data product or data licence before building a price book. Defines the value metric, builds a cost floor, a customer-value ceiling, market comparables and willingness-to-pay evidence into a price corridor, prices extra use rights from the value they add, and tests the result. Use when launching a data product, pricing a new use right, or when list prices lack a defensible basis.
+description: Work out what to charge for a data product or data licence before building a price book. Defines the value metric, builds a cost floor, a customer-value ceiling, market comparables and willingness-to-pay evidence into a price corridor, prices the extra rights a customer can be granted from the value they add, and tests the result. Use when launching a data product, pricing a new customer right, or when list prices lack a defensible basis.
 ---
 
 # Data Price Setting
 
 Answer one question: **what should we charge, and how sure are we?** The `price-book-builder` skill turns prices into a controlled price book; this skill finds the prices. Do this first.
 
-The register decides what can be quoted. This skill decides what a product is worth. You can run it before Legal responds: rights not yet confirmed are priced as **Provisional**, and the result says so. A right Legal has confirmed as Prohibited is shown as Blocked and not priced. The corridor method works for any product (API access, software, services, data); the use-right ladder applies only to data.
+This skill prices what we **confer** to the customer: the rights they get on the product (internal use, display, redistribution, AI uses). Whether we may confer them depends on what we **hold** on the source data, which the register records. The two are different: see `price-book-builder/references/rights-model.md`. You can run this skill before Legal responds: a conferred right whose held rights are not yet confirmed is priced as **Provisional**, and the result says so. A right we are confirmed not to hold is Blocked and not priced. The corridor method works for any product (API access, software, services, data); the conferred-right ladder applies only to data.
 
 ## Inputs to collect first
 
 1. **Product and dataset**: the `dataset_id`, what a buyer receives, delivery, refresh, history.
-2. **Rights basis** for data products, from the register (`Effective_Rights` or the Use_Rights sheet): `eligible_rights` are Granted or Conditional with `legal_confirmed = Yes`; `prohibited_rights` are confirmed Prohibited; every other right is Provisional. If there is no register yet, everything is Provisional; start `dataset-intake-register` in parallel. If the product depends on secondary processing that is still open, treat the affected parties as excluded from the confirmed coverage and show the provisional coverage separately. Skip this input for products that carry no data.
+2. **Rights basis** for data products, per conferred right: run `price-book-builder/scripts/check_price_book.py` on draft lines (`dataset_id`, `conferred_right`, `data_form`) with the register. It checks the held rights each conferred right needs and reports Confirmed, Provisional, Contradicted or Blocked. Put the result in `rights_basis`. Do not read the register's `use_right` rows as if they were the customer's rights. If there is no register yet, everything is Provisional; start `dataset-intake-register` in parallel. If the product depends on secondary processing that is still open, treat the affected parties as excluded from the confirmed coverage and show the provisional coverage separately. Skip this input for products that carry no data.
 3. **Coverage** from the register's `Coverage_Summary` (share of parties and volume that can be included), the coverage the value estimates assume, and the coverage if open items are resolved.
 4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and Finance's margin floor.
 5. **Customers and value**: segments, how many, how much each would use, and what the product is worth to each per year. Record the source of each estimate: estimate, interview, pilot, or contract data.
@@ -31,7 +31,7 @@ Test each candidate unit against five questions. Choose the one that passes the 
 2. Can we meter it reliably and let the customer verify it?
 3. Can the customer predict their bill?
 4. Is it hard to game or split to avoid paying?
-5. Does it line up with our costs and with the register's use rights?
+5. Does it line up with our costs, and with the rights we hold on the source data (the register)?
 
 Typical candidates for travel data: markets or routes covered, queries or records, entities tracked (properties, carriers, agencies), users, or a share of the revenue the data enables. Keep one metric per product; add a second only when value and cost split clearly.
 
@@ -57,7 +57,7 @@ Write the inputs as JSON (see `references/input-schema.md` and `examples/air-sho
 
 `python scripts/price_corridor.py --in input.json --md report.md --csv lines.csv`
 
-It returns the floor, the value-based price and cap, the market and willingness-to-pay anchors, a blended recommendation clamped between floor and cap, a list price that allows for the expected discount, prices for extra use rights, sensitivities, a confidence rating, and flags. Report its numbers; do not recompute them by hand.
+It returns the floor, the value-based price and cap, the market and willingness-to-pay anchors, a blended recommendation clamped between floor and cap, a list price that allows for the expected discount, prices for extra conferred rights, sensitivities, a confidence rating, and flags. Report its numbers; do not recompute them by hand.
 
 ### 6. Read the result like a pricer
 
@@ -67,9 +67,9 @@ It returns the floor, the value-based price and cap, the market and willingness-
 - **Priced at the floor or at the cap**: the evidence does not support the target. Say so.
 - **Low confidence**: present as provisional, a range to test, with the next evidence to collect.
 
-### 7. Price the use-right ladder from value
+### 7. Price the conferred-right ladder from value
 
-Price each additional right as base price + capture share × the extra value per unit that right creates + its extra risk and supplier cost. Do not use standard multipliers. A right Legal has confirmed as Prohibited is shown as blocked, with no price. A right that is not yet confirmed is priced and labelled Provisional. Treat each AI use as its own right, with its own value case.
+Price each additional right the customer is granted as base price + capture share × the extra value per unit that right creates + its extra risk and supplier cost. Do not use standard multipliers. A right we are confirmed not to hold the grounds for conferring is shown as Blocked, with no price. A right whose held rights are not yet confirmed is priced and labelled Provisional. Treat each AI use as its own right, with its own value case.
 
 ### 8. Design the test
 
@@ -83,7 +83,7 @@ Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the o
 
 1. **Headline**: the recommended realized price and list price per unit, the confidence, and the one thing that would change the answer.
 2. **Corridor table** and **segments**.
-3. **Use-right ladder** with the rights basis (Confirmed or Provisional) and the reasoning for each step, and the blocked rights.
+3. **Conferred-right ladder** with the rights basis (Confirmed, Provisional, Contradicted or Blocked) and the reasoning for each step, and the blocked rights.
 4. **Sensitivity table** and the value of resolving open rights items.
 5. **Flags and next evidence**.
 6. **Pilot plan and decision rule.**
@@ -92,7 +92,7 @@ Give the Pricing Council the memo, the CSV lines (Draft, single tier), and the o
 ## Rules
 
 - Compute with `scripts/price_corridor.py`. Show the inputs next to the result.
-- Price unconfirmed rights as Provisional and say so in the headline. Never price a right Legal has confirmed as Prohibited. Never present a Provisional price as cleared to quote.
+- Price a conferred right whose held rights are unconfirmed as Provisional and say so in the headline. Never price a right the register shows we are confirmed not to hold. Never present a Provisional price as cleared to quote.
 - Label invented, illustrative, or assumed inputs. A worked example is not a quote.
 - Do not present a price as certain when confidence is Low.
 - Prices are proposals. The Pricing Council approves them and Finance confirms margin floors.

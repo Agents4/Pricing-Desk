@@ -1,5 +1,7 @@
 # Party-aware data rights register: SharePoint kit
 
+This kit models the rights **we hold** on each dataset, party by party (what we may do with the data under each agreement). It does not model what a customer is granted on a product we sell; that is `conferred_right` on the price book.
+
 Contents
 - schema/sharepoint-rights-register-schema.xlsx  Column-level design for 13 lists, plus permissions, flows, and views. Start at README, then Lists.
 - schema/sharepoint-rights-register-schema.json  The same design as data, for provisioning scripts (PnP, Graph).

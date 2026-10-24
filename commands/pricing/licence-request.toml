@@ -5,5 +5,5 @@ Use the data-license-pricing skill for this request. Follow the pricing desk rul
 Request and inputs: {{args}}
 
 If a needed input is missing, list it and stop.
-If any right is Unknown, do not price it; write the Legal escalation note instead.
+Check that we hold the rights needed to grant what the customer asks for. If a needed held right is Unknown or unconfirmed, price the request as Provisional and write the Legal escalation note. Do not price a right Legal has confirmed we do not hold.
 """

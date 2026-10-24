@@ -5,5 +5,5 @@ Use the dataset-intake-register skill for this request. Follow the pricing desk 
 Request and inputs: {{args}}
 
 If a needed input is missing, list it and stop.
-Leave legal_confirmed blank. Propose a status for each of the nine use rights with evidence.
+Leave legal_confirmed blank. Propose a status for each of the nine rights WE HOLD on the dataset, with evidence. This is what we may do with the data, not what a customer will be allowed to do.
 """

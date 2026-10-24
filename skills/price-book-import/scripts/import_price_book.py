@@ -12,20 +12,28 @@ Usage:
 Writes to OUT_DIR:
   price_book.csv          standard columns, one row per tier, status "Existing"
   import_report.md        mapping used, product types, issues, assumptions, what needs a human decision
-  dataset_candidates.csv  products that carry data or third-party content, as candidate register entries,
-                          ranked by annual revenue (the intake priority list)
-  register_backfill.csv   Use_Rights rows to start intake with: status Unknown, legal_confirmed blank
+  dataset_candidates.csv  products that carry data or third-party content, as candidate source datasets for
+                          the register, ranked by annual revenue (the intake priority list)
+  The held rights the register needs (register_backfill.csv) come from the next step: run
+  check_price_book.py with --exposure-csv and --backfill-csv. It maps each conferred right to the held
+  rights it needs.
 
 Rules it follows
   - It never invents a number. A missing floor price stays blank and is reported.
   - It infers product_type from the words in the product, category, description and unit. Every
     inference is listed with its reason so a person can correct it. Correct with --map or by editing.
-  - Data products get a candidate dataset_id (DS-CAND-...). Candidate ids are placeholders for intake.
+  - The price book records what we CONFER to the customer (conferred_right), not what we hold. The
+    register holds the rights we have on the source data. They are linked by dataset_id.
+  - Data products get a candidate dataset_id (DS-CAND-...): the source dataset the product is built from,
+    inferred from the product name. Candidate ids are placeholders for intake and lineage checks.
   - API products are marked rights_relevance=Possible: responses may carry supplier or third-party content.
-  - It does not set legal_confirmed, rights status other than Unknown, or status Approved.
+  - It does not set legal_confirmed, any register status, or status Approved.
 
 --map JSON: {"list_price": "Source header", "product_id": "SKU", ...,
-             "types": {"Product name": "service"}, "datasets": {"Product name": "DS-SUP-001"}}
+             "types": {"Product name": "service"}, "datasets": {"Product name": "DS-SUP-001"},
+             "forms": {"Product name": "passthrough"}}
+  forms: data_form per product, derived (default: an aggregate or insight built from the dataset) or
+  passthrough (the customer receives the underlying data itself).
 """
 import argparse
 import csv
@@ -35,8 +43,8 @@ import sys
 from collections import OrderedDict, defaultdict
 from pathlib import Path
 
-STANDARD = ["line_id", "product_id", "product_type", "product_name", "product_family", "dataset_id", "use_right",
-            "delivery", "unit", "tier_min", "tier_max", "list_price", "floor_price", "currency", "term_months",
+STANDARD = ["line_id", "product_id", "product_type", "product_name", "product_family", "dataset_id", "conferred_right",
+            "data_form", "delivery", "unit", "tier_min", "tier_max", "list_price", "floor_price", "currency", "term_months",
             "tier_model", "status", "version", "annual_revenue", "customers", "rights_relevance", "price_period",
             "source_row", "notes"]
 
@@ -47,7 +55,8 @@ SYNONYMS = {
     "product_family": ["family", "category", "product family", "group", "line", "portfolio"],
     "product_type": ["type", "product type"],
     "dataset_id": ["dataset", "dataset id", "dataset_id"],
-    "use_right": ["use right", "use_right", "rights", "license type", "licence type", "usage right"],
+    "conferred_right": ["conferred right", "conferred_right", "use right", "use_right", "rights", "license type",
+                        "licence type", "usage right", "rights granted"],
     "delivery": ["delivery", "delivery method", "channel", "format"],
     "unit": ["pricing unit", "unit", "uom", "unit of measure", "metric", "charge unit", "billing unit", "per"],
     "tier_range": ["volume band", "band", "tier", "tiers", "volume", "range", "quantity band", "volume tier"],
@@ -156,12 +165,13 @@ def build_mapping(headers, user_map):
     mapping, used = {}, set()
     nh = [norm(h) for h in headers]
     for canon, src in user_map.items():
+        canon = {"use_right": "conferred_right"}.get(canon, canon)
         if canon in SYNONYMS or canon in STANDARD:
             if src in headers:
                 mapping[canon] = headers.index(src)
                 used.add(mapping[canon])
     order = ["list_price", "floor_price", "tier_range", "tier_min", "tier_max", "unit", "term_months", "annual_revenue",
-             "customers", "currency", "description", "product_family", "product_type", "dataset_id", "use_right",
+             "customers", "currency", "description", "product_family", "product_type", "dataset_id", "conferred_right",
              "delivery", "product_name", "product_id"]
     for canon in order:
         if canon in mapping:
@@ -190,7 +200,7 @@ def slug(s):
     return re.sub(r"[^A-Z0-9]+", "-", str(s).upper()).strip("-")[:40].strip("-")
 
 
-USE_RIGHT_WORDS = [  # (use_right, regex on lowercase product text)
+CONFERRED_RIGHT_WORDS = [  # (conferred_right, regex on lowercase product text)
     ("redistribution_resale", r"\b(resale|resell|redistribut\w*|white[- ]?label)\b"),
     ("derivative_data_product", r"\b(derivative|derived product)\b"),
     ("ai_training", r"\b(ai training|model training|train(ing)? rights)\b"),
@@ -199,18 +209,18 @@ USE_RIGHT_WORDS = [  # (use_right, regex on lowercase product text)
 ]
 
 
-def infer_use_right(text):
+def infer_conferred_right(text):
     t = norm(text)
-    for ur, rx in USE_RIGHT_WORDS:
+    for ur, rx in CONFERRED_RIGHT_WORDS:
         if re.search(rx, t):
             return ur
     return ""
 
 
 def base_name(name):
-    """'Fare Data - Resale' -> 'Fare Data' when the suffix names a use right."""
+    """'Fare Data - Resale' -> 'Fare Data' when the suffix names a conferred right."""
     m = re.match(r"^(.*?)\s+[-–—]\s+(.+)$", name)
-    if m and infer_use_right(m.group(2)):
+    if m and infer_conferred_right(m.group(2)):
         return m.group(1).strip()
     return name
 
@@ -253,6 +263,7 @@ def main():
     user_map = json.load(open(args.map)) if args.map else {}
     forced_types = user_map.get("types", {})
     forced_ds = user_map.get("datasets", {})
+    forced_forms = user_map.get("forms", {})
     raw = read_rows(args.inp, args.sheet)
     if not raw:
         sys.exit("The input file is empty.")
@@ -315,32 +326,33 @@ def main():
         rel = {"data_license": "Required", "api_access": "Possible"}.get(ptype, "None")
         ds = rec.get("dataset_id") or forced_ds.get(name) or forced_ds.get(rec.get("product_id")) or ""
         ds_inferred = False
-        use_right = rec.get("use_right", "")
+        use_right = rec.get("conferred_right", "")
         ur_inferred = False
         if not use_right and rel != "None":
-            use_right = infer_use_right(f"{name} {rec.get('description','')}")
+            use_right = infer_conferred_right(f"{name} {rec.get('description','')}")
             ur_inferred = bool(use_right)
+        form = forced_forms.get(name) or forced_forms.get(rec.get("product_id")) or ""
         if not ds and rel == "Required":
             ds, ds_inferred = f"DS-CAND-{slug(base_name(name))}", True
         out.append(OrderedDict(
             line_id="", product_id=rec.get("product_id") or slug(name), product_type=ptype, product_name=name,
-            product_family=rec.get("product_family", ""), dataset_id=ds, use_right=use_right,
-            delivery=rec.get("delivery", ""), unit=rec.get("unit", ""),
+            product_family=rec.get("product_family", ""), dataset_id=ds, conferred_right=use_right,
+            data_form=form if rel != "None" else "", delivery=rec.get("delivery", ""), unit=rec.get("unit", ""),
             tier_min=int(tmin) if tmin is not None else "", tier_max=int(tmax) if tmax is not None else "",
             list_price=lp, floor_price="" if fp is None else fp, currency=rec.get("currency") or args.default_currency,
             term_months=tm, tier_model=args.tier_model, status="Existing", version=args.version,
             annual_revenue="" if rev is None else rev, customers="" if cust is None else int(cust),
             rights_relevance=rel, price_period="", source_row=ri,
             notes="; ".join(x for x in [f"type {ptype} ({conf}: {why})" if conf != "high" else "",
-                                        "dataset_id is a candidate" if ds_inferred else "",
-                                        "use right inferred from the product words, confirm in contracts" if ur_inferred else "",
-                                        "use right not stated" if rel != "None" and not use_right else ""] if x)))
+                                        "dataset_id is a candidate: source dataset inferred from the product name" if ds_inferred else "",
+                                        "conferred right inferred from the product words, confirm in contracts" if ur_inferred else "",
+                                        "conferred right not stated" if rel != "None" and not use_right else ""] if x)))
         out[-1]["_conf"], out[-1]["_why"] = conf, why
 
     # Bands such as "0 - 1M" and "1M - 10M" share a boundary: the next tier starts one unit above it
     grp = defaultdict(list)
     for o in out:
-        grp[(o["product_id"], o["unit"], o["term_months"], o["use_right"])].append(o)
+        grp[(o["product_id"], o["unit"], o["term_months"], o["conferred_right"])].append(o)
     for items in grp.values():
         items.sort(key=lambda o: o["tier_min"] if o["tier_min"] != "" else 0)
         for a, b in zip(items, items[1:]):
@@ -386,7 +398,7 @@ def main():
         c["lines"] += 1
         c["rev"] += float(o["annual_revenue"] or 0)
         c["cust"] += int(o["customers"] or 0)
-        c["rights"].add(o["use_right"] or "")
+        c["rights"].add(o["conferred_right"] or "")
         if o["rights_relevance"] == "Required":
             c["rel"] = "Required"
     has_rev = any(c["rev"] for c in cands.values())
@@ -394,22 +406,13 @@ def main():
     with open(od / "dataset_candidates.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["priority_rank", "dataset_id", "name", "rights_relevance", "product_types", "price_lines",
-                    "annual_revenue", "customers", "use_rights_stated", "next_step"])
+                    "annual_revenue", "customers", "conferred_rights_stated", "next_step"])
         for i, (k, c) in enumerate(ranked, 1):
-            nxt = ("Run dataset-intake-register: find the supplier and customer agreements, propose the nine use rights"
+            nxt = ("Confirm the source dataset (lineage), then run dataset-intake-register: find the supplier and customer agreements and propose the held rights"
                    if c["rel"] == "Required" else
                    "Decide first: do responses carry supplier or third-party content? If yes, add a dataset_id and run intake")
             w.writerow([i, k, c["name"], c["rel"], ";".join(sorted(c["types"])), c["lines"],
                         round(c["rev"], 2) if has_rev else "", c["cust"] or "", ";".join(sorted(x for x in c["rights"] if x)) + (" + (not stated on some lines)" if "" in c["rights"] and len(c["rights"]) > 1 else ("(not stated)" if c["rights"] == {""} else "")), nxt])
-    with open(od / "register_backfill.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["dataset_id", "use_right", "status", "conditions", "evidence_ref", "legal_confirmed", "notes"])
-        for k, c in ranked:
-            if c["rel"] != "Required":
-                continue
-            for ur in sorted(c["rights"], key=lambda x: (x == "", x)):
-                w.writerow([k, ur, "Unknown", "", "", "",
-                            "Sold today under this price book line" if ur else "Use right not stated in the price book: find it in the customer contracts"])
 
     # report
     by_type = defaultdict(list)
@@ -438,7 +441,10 @@ def main():
     L.append("\n## What needs a human decision\n")
     nd = [(k, c) for k, c in ranked]
     L.append(f"- Register candidates: {len(nd)} (see dataset_candidates.csv). Data products need a rights check. API products are marked Possible: decide whether responses carry supplier or third-party content.")
-    L.append(f"- Use right is not stated for {sum(1 for o in out if o['rights_relevance'] != 'None' and not o['use_right'])} lines that carry data. Legacy price books rarely say which use right a price covers; find it in the customer contracts.")
+    L.append(f"- The conferred right (what the customer may do with the product) is not stated for {sum(1 for o in out if o['rights_relevance'] != 'None' and not o['conferred_right'])} lines that carry data. Legacy price books rarely say which right a price covers; find it in the customer contracts.")
+    dl = sorted({o['product_name'] for o in out if o['rights_relevance'] == 'Required' and not o['data_form']})
+    if dl:
+        L.append(f"- Data form is not set for {len(dl)} data products ({', '.join(dl[:6])}{'...' if len(dl) > 6 else ''}). The checker treats them as derived (an aggregate or insight built from the dataset). Tell it which deliver the underlying data itself (passthrough) with --map \"forms\", because that needs different held rights.")
     L.append(f"- Floor price is missing on {len(missing_floor)} of {len(out)} lines. Floors are not invented. Set them with the data-price-setting skill (cost floor) or from Finance.")
     L.append("\n## Issues\n")
     L.extend([f"- {i}" for i in issues] or ["- None"])
@@ -447,15 +453,16 @@ def main():
         "All imported lines have status Existing (current prices in force). Nothing is Approved or Proposed.",
         f"tier_model is set to {args.tier_model} for every line; confirm how the tiers actually bill (re-run with --tier-model graduated if each tier prices only its own units).",
         f"Currency defaults to {args.default_currency} where the source has no currency column. Price period (monthly or annual) is not detected: check the unit text.",
-        "Candidate dataset ids (DS-CAND-...) are placeholders. Replace them with real register ids during intake."]:
+        "Candidate dataset ids (DS-CAND-...) are placeholders for the source dataset each product is built from. Confirm the lineage with data engineering and replace them with real register ids during intake.",
+        "The price book records the rights we confer to the customer. The register records the rights we hold on the source data. Nothing here says whether we hold what we confer; the checker works that out from the register."]:
         L.append(f"- {a}")
     L.append("\n## Next steps\n")
-    L.append("1. Run check_price_book.py on price_book.csv with no register (strategy mode) for a consistency check and a first exposure report.")
-    L.append("2. Work the dataset_candidates.csv list top down with the dataset-intake-register skill, using register_backfill.csv as the starting rows.")
+    L.append("1. Run check_price_book.py on price_book.csv with no register (strategy mode) and --exposure-csv exposure.csv --backfill-csv register_backfill.csv. You get a consistency check, the held rights the register needs (register_backfill.csv) and a ranked list of the register questions.")
+    L.append("2. Work the list top down with the dataset-intake-register skill, starting from register_backfill.csv. Candidate datasets are in dataset_candidates.csv.")
     L.append("3. Re-run the checker against the register as rows are confirmed. Use release mode only when a price book is going out for quoting.")
     (od / "import_report.md").write_text("\n".join(L) + "\n", encoding="utf-8")
 
-    print(f"Read {n_data_rows} rows, wrote {len(out)} price lines, {len(cands)} register candidates to {od}")
+    print(f"Read {n_data_rows} rows, wrote {len(out)} price lines, {len(cands)} candidate source datasets to {od}")
     print(f"Product types: " + ", ".join(f"{t} {len(v)}" for t, v in sorted(by_type.items())))
     print(f"Floor price missing on {len(missing_floor)} lines; {len(issues)} import issues")
 
