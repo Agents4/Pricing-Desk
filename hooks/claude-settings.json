@@ -1,0 +1,17 @@
+{
+  "_generated_by": "python3 tools/pdos.py build, from core/hooks/claude-settings.json. Edit that file, not this one.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/hooks/guard_pricing_files.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

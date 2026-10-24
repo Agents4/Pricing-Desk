@@ -4,7 +4,7 @@ An operating system for the pricing desk of a travel-technology (GDS) company. I
 
 The desk prices what the customer is **granted**. For data and API lines each price states the right it covers. Whether we hold that right is the product manager's call, assessed in the separate **Rights Desk** package (Agents4/Rights-Desk). The two meet at one hand-off list (`product_rights_handoff.csv`).
 
-Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product contains no default threshold. Blank means Unknown.
+Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product ships no default threshold: scripts stop and say what is missing rather than fill in a company number. Blank means Unknown.
 
 ## Start
 
@@ -21,7 +21,7 @@ Then ask for `pd-start` (`/pricing:start`): it shows what is due today, this wee
 | Rhythm | Skills that run it |
 |---|---|
 | Daily deal desk | `deal-desk-triage`, `account-price-fit`, `deal-desk-review`, `api-access-request`, `data-license-pricing` |
-| Weekly review | `weekly-pricing-review`, `price-realization-analysis`, `api-usage-tier-fit` |
+| Weekly review | `weekly-pricing-review`, `api-usage-tier-fit` (`price-realization-analysis` for a deeper drill) |
 | Monthly Pricing Council | `council-decision-pack`, `price-change-proposal`, `pricing-stakeholder-review` |
 | Quarterly review | `quarterly-price-review`, `competitive-price-scan`, `pricing-win-loss`, `analog-research` |
 | Annual release | `price-book-release`, `price-book-import`, `price-book-builder`, `rights-handoff` |
@@ -69,13 +69,13 @@ Run with python3 from the skill folder. Examples sit in each skill's `examples/`
 
 ## Tools and checks
 
-`python3 tools/pdos.py` has: `validate`, `build` (`--check` for drift), `doctor`, `lint <file>`, `evals --coverage`, `notebook-pack`, `new-instance`, `upgrade-instance`, `release`, `list`. Tests: `python3 -m unittest discover -s tests`. Edit `core/`, then build; never edit generated folders.
+`python3 tools/pdos.py` has: `validate`, `build` (`--check` for drift), `doctor`, `lint <file>`, `evals --coverage`, `notebook-pack`, `new-instance`, `upgrade-instance`, `release`, `list`. `release` writes a source-only tarball: after extracting it run `python3 tools/pdos.py build` to produce the generated folders. Tests: `python3 -m unittest discover -s tests`. Edit `core/`, then build; never edit generated folders.
 
 ## Platforms
 
 Gemini CLI extension (this repo root), Antigravity CLI (`.agents/skills/`), Gemini app skills (zips in `dist/gemini-app/zips/`), Gemini Notebook packs (`dist/notebook-packs/`, `notebook-pack`). Details and the verify list: `adapters/google/`. The Microsoft Copilot guide in `copilot-guide/` is legacy (`copilot-guide/LEGACY.md`).
 
-The extension also carries a guard hook that blocks edits setting a price book line to Approved; the Council overrides with `PRICING_DESK_COUNCIL=1`. It guards against model mistakes, not against a person.
+The extension also carries a guard hook that blocks writes adding a "Status: Approved" marker to pricing artifacts (price book, Council, decision log, exception log, anything under `workspace/` or `outputs/`); the Council overrides with `PRICING_DESK_COUNCIL=1`. It guards against model mistakes, not against a person.
 
 ## Upgrading
 

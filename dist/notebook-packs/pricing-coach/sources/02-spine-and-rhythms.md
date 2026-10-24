@@ -57,8 +57,8 @@ Every rhythm has an owner role, a trigger, inputs, the skills that run it, an ou
 - **Owner:** pricing analyst.
 - **Trigger:** same day each week.
 - **Inputs:** invoices against list, discount and credit data, API usage by key and plan, deals closed.
-- **Skills:** weekly-pricing-review, price-realization-analysis, api-usage-tier-fit.
-- **Output:** one-page review: realized price against list and against last week, top leakage by cause, plans where usage and plan do not fit, harvest flags ("possible data collection, to confirm") with evidence, exceptions summary, three actions with owners.
+- **Skills:** weekly-pricing-review (the weekly roll-up), api-usage-tier-fit; price-realization-analysis only for a deeper drill into one leak.
+- **Output:** one-page review: realized price against list and against last week, top leakage by cause, plans where usage and plan do not fit, usage-pattern flags ("usage pattern to confirm with the account owner") with evidence, exceptions summary, three actions with owners.
 - **Decision:** which leaks to chase, which accounts need a conversation, which flags go to the product manager.
 - **Measure:** realization rate, leakage by cause, flags opened and closed, actions closed on time.
 
@@ -74,7 +74,7 @@ Every rhythm has an owner role, a trigger, inputs, the skills that run it, an ou
 ## Quarterly: price review
 - **Owner:** pricing lead.
 - **Trigger:** quarter end.
-- **Inputs:** four monthly packs, competitive scan, WTP evidence, win and loss, realization trend.
+- **Inputs:** the quarter's three monthly Council packs, competitive scan, WTP evidence, win and loss, realization trend.
 - **Skills:** quarterly-price-review, competitive-price-scan, pricing-win-loss, analog-research.
 - **Output:** review of every product line against value, market and realization; proposed changes for the Council; refreshed analog library.
 - **Decision:** which lines to change, hold or retire next quarter.
@@ -92,7 +92,7 @@ Every rhythm has an owner role, a trigger, inputs, the skills that run it, an ou
 ## Event-driven
 | Event | Skills | Output |
 |---|---|---|
-| New product or construct with no price history | analog-research, data-price-setting, packaging-design, council-decision-pack | Corridor memo and Council pack. A pre-release review window of several weeks is a practitioner suggestion (see 04-frameworks.md); the company sets its own. |
+| New product or construct with no price history | analog-research, data-price-setting, packaging-design, council-decision-pack | Corridor memo and Council pack. A pre-release review window of several weeks is a practitioner suggestion (see frameworks.md); the company sets its own. |
 | API access request for data collection | api-access-request, data-license-pricing | Priced at the data-licence rate with minimum commitment, retention term and audit, and a hand-off to the product manager |
 | Harvest flag from the weekly review | api-usage-tier-fit | Evidence file; conversation plan; hand-off |
 | Supplier cost or contract change | price-change-proposal, cost-to-serve-model (planned, not yet built) | Impact on floors; change proposal |

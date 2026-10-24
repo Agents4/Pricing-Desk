@@ -7,7 +7,7 @@
           {
             "type": "command",
             "name": "pricing-desk-guard",
-            "description": "Blocks edits that set a price book line status to Approved",
+            "description": "Blocks edits that add an Approved status to a price book or other pricing artifact",
             "command": "python3 \"${extensionPath}${/}hooks${/}guard_pricing_files.py\"",
             "timeout": 5000
           }

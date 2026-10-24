@@ -40,7 +40,8 @@ Read if present: `workspace/context-library/pricing-governance.md`, `product-cat
 | Decide what to charge for a new product, right or API use | `data-price-setting` (after `analog-research` if there is no price history) |
 | Handle today's quote requests | `deal-desk-triage` |
 | Review one deal | `deal-desk-review`, with `account-price-fit` when there is an anchor deal |
-| Price a data licence or an API request that would collect data | `data-license-pricing`, `api-access-request` |
+| Handle new or expanded API access, including access that may collect data | `api-access-request` |
+| Price a data licence, or the right once the purpose is decided | `data-license-pricing` |
 | Run the weekly realization and API usage review | `weekly-pricing-review` |
 | Prepare the Council | `council-decision-pack` |
 | Release the price book | `price-book-release` |

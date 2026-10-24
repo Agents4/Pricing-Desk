@@ -62,7 +62,27 @@ def assemble(title: str, chunks: List[Tuple[str, str]], note: str = "") -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+PACK_MARK = ".pdos-notebook-pack"
+
+
+def prepare_out(out_dir: str) -> None:
+    """Create out_dir for a pack. An existing folder is reused only if it is empty or is one of our packs (then its
+    sources/ are cleared, so stale files from an older run cannot linger). Anything else is refused."""
+    if os.path.isdir(out_dir) and os.listdir(out_dir):
+        if not os.path.isfile(os.path.join(out_dir, PACK_MARK)):
+            raise SystemExit("%s exists, is not empty and is not a notebook pack made by this tool; choose another --out" % out_dir)
+        src = os.path.join(out_dir, "sources")
+        if os.path.isdir(src):
+            for f in os.listdir(src):
+                if f.endswith(".md"):
+                    os.remove(os.path.join(src, f))
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, PACK_MARK), "w", encoding="utf-8") as fh:
+        fh.write("Made by pdos notebook-pack. This folder may be cleared and rewritten by the next run.\n")
+
+
 def write_sources(out_dir: str, sources: List[Tuple[str, str]], max_words: int = DEFAULT_MAX_WORDS) -> List[Tuple[str, int]]:
+    prepare_out(out_dir)
     os.makedirs(os.path.join(out_dir, "sources"), exist_ok=True)
     written, n = [], 0
     for title, text in sources:
@@ -116,8 +136,10 @@ def build_coach_pack(core_dir: str, skills, out_dir: str, version: str = "") -> 
     rules = [(f, _read(os.path.join(core_dir, f))) for f in ("shared/operating-rules.md", "shared/output-conventions.md")]
     method = [(f, _read(os.path.join(core_dir, f))) for f in ("methodology/spine.md", "methodology/rhythms.md")]
     frame = [("methodology/frameworks.md", _read(os.path.join(core_dir, "methodology/frameworks.md")))]
-    sk = [(s.name, s.raw) for s in skills if s.metadata.get("layer") == "pricing"]
-    sys_sk = [(s.name, s.raw) for s in skills if s.metadata.get("layer") != "pricing"]
+    # Only the product's own skills: a company's local skills can hold company facts and must never reach a shared coach pack.
+    core_sk = [s for s in skills if getattr(s, "origin", "core") == "core"]
+    sk = [(s.name, s.raw) for s in core_sk if s.metadata.get("layer") == "pricing"]
+    sys_sk = [(s.name, s.raw) for s in core_sk if s.metadata.get("layer") != "pricing"]
     sources = [("Operating rules and output conventions", assemble("Operating rules and output conventions", rules)),
                ("Spine and rhythms", assemble("The pricing spine and rhythms", method)),
                ("Frameworks and sources", assemble("Frameworks and sources", frame)),
@@ -187,7 +209,16 @@ def build_company_pack(root: str, core_dir: str, out_dir: str) -> List[Tuple[str
     return written
 
 
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
+def valid_slug(account: str) -> bool:
+    return bool(SLUG_RE.match(account)) and ".." not in account
+
+
 def build_account_pack(root: str, core_dir: str, account: str, out_dir: str) -> List[Tuple[str, int]]:
+    if not valid_slug(account):
+        raise SystemExit("account %r is not a folder slug (lower-case letters, digits, dot, dash, underscore; no path separators)" % account)
     ad = os.path.join(root, "workspace", "accounts", account)
     if not os.path.isdir(ad):
         raise SystemExit("account folder not found: workspace/accounts/%s" % account)

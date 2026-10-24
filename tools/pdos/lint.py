@@ -30,8 +30,14 @@ def _tables(lines: List[str]) -> List[Tuple[int, List[str], List[List[str]]]]:
     return out
 
 
+RECORD_TYPES = {"analog", "record", "context"}
+
+
 def lint_text(text: str, where: str) -> List[Issue]:
     issues: List[Issue] = []
+    fm = re.match(r"\A---\s*\n(.*?)\n---", text, re.DOTALL)
+    if fm and re.search(r"^type:\s*(%s)\s*$" % "|".join(RECORD_TYPES), fm.group(1), re.MULTILINE):
+        return issues  # a record or library file, checked by its own script (for example check_analogs.py), not an output
     lines = text.splitlines()
     body = [l for l in lines if l.strip()]
 
@@ -82,5 +88,8 @@ def lint_text(text: str, where: str) -> List[Issue]:
 
 
 def lint_file(path: str) -> List[Issue]:
-    with open(path, "r", encoding="utf-8") as fh:
-        return lint_text(fh.read(), path)
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            return lint_text(fh.read(), path)
+    except (OSError, UnicodeDecodeError) as e:
+        return [Issue("error", "OL000", path, "cannot read the file: %s" % (e.strerror if isinstance(e, OSError) and e.strerror else e))]

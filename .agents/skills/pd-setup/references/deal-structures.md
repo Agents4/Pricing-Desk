@@ -28,3 +28,14 @@ last_reviewed: "{{date}}"
 **Gets (term, commitment, minimum, audit, reference...):** Unknown
 **Gives (ramp, allowance, pilot, credit, support...):** Unknown
 **Never traded:** Unknown
+
+## Gets catalog (what a give can be traded for)
+> One row per get, with a value the Council has agreed. A get with no value on file counts as zero in the account waterfall.
+
+| Get | How measured | Value to us (per year) | Value basis |
+|---|---|---|---|
+| Unknown | | Unknown | |
+
+## Incentive changes
+**Incentives paid to the agency that change if volume or mix changes (rate, tier, trigger):** Unknown
+**Cost of each give to us (allowance, ramp, credit) and how it is computed:** Unknown

@@ -72,5 +72,5 @@ Confirm each before finishing.
 - All statistics computed with code, with sample sizes beside every figure.
 - No stated willingness to pay presented as a demand forecast.
 - No fabricated respondent data or benchmark. If no benchmark is supplied, none is cited.
-- The research analyst fields the study and approves the findings. No customer is contacted from this skill.
+- Whoever fields the study approves the findings; the approver is named in `pricing-governance.md` (Unknown if blank). No customer is contacted from this skill.
 - Respondent identities and customer-specific answers stay out of any summary.

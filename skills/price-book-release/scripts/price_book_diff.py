@@ -13,15 +13,30 @@ import argparse
 import csv
 import sys
 
-FIELDS = ["list_price", "floor_price", "conferred_right", "unit", "tier_min", "tier_max", "term_months", "currency", "status"]
+FIELDS = ["product_id", "product_type", "product_name", "product_family", "conferred_right", "right_basis", "delivery", "unit",
+          "tier_min", "tier_max", "tier_model", "list_price", "floor_price", "currency", "term_months", "status",
+          "minimum_commitment", "retention_term", "audit_right"]
+NUMERIC = {"list_price", "floor_price", "tier_min", "tier_max", "term_months"}
 
 
 def load(p):
-    with open(p, newline="", encoding="utf-8-sig") as fh:
+    try:
+        fh = open(p, newline="", encoding="utf-8-sig")
+    except OSError as e:
+        sys.exit("cannot read %s: %s" % (p, e.strerror or e))
+    with fh:
         rows = list(csv.DictReader(fh))
     if rows and "line_id" not in rows[0]:
         sys.exit("%s has no line_id column" % p)
-    return {r["line_id"].strip(): r for r in rows if (r.get("line_id") or "").strip()}
+    out = {}
+    for r in rows:
+        k = (r.get("line_id") or "").strip()
+        if not k:
+            continue
+        if k in out:
+            sys.exit("%s has a duplicated line_id %r; fix it before comparing" % (p, k))
+        out[k] = r
+    return out
 
 
 def num(s):
@@ -46,6 +61,8 @@ def main():
             continue
         for fld in FIELDS:
             o, n = (old[k].get(fld) or "").strip(), (new[k].get(fld) or "").strip()
+            if fld in NUMERIC and num(o) is not None and num(n) is not None and num(o) == num(n):
+                continue
             if o != n:
                 pct = ""
                 if fld in ("list_price", "floor_price") and num(o) and num(n) is not None:

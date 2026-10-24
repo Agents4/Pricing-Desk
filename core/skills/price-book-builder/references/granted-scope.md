@@ -25,6 +25,7 @@ Each AI use is its own right. Do not bundle them.
 - Price `internal_use` first. Every broader right is a separate line priced above it for the same product, delivery, unit and tier. The checker fails a broader right priced below internal use.
 - A broader right is worth more because it creates more value for the customer (a new revenue line), costs us exclusivity and market position, and carries more risk. Derive each uplift from evidence. Do not apply a standard multiplier.
 - A line without a stated right is not a priced product yet. In strategy mode the checker warns; in release mode it fails.
+- A right that keeps or collects data carries `minimum_commitment`, `retention_term` and `audit_right` as price book columns (the checker warns, and errors in release mode, when they are missing).
 - Conditions travel with the right: attribution, no re-sale to named competitors, retention period, audit. Put them in `notes` and in the contract, and price the audit and enforcement cost.
 - A customer asking for a right the price book does not list is a new line: use `data-price-setting`, do not improvise a discount.
 

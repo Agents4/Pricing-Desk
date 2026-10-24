@@ -20,6 +20,9 @@ Price book CSV columns (header row required)
   Required: line_id, unit, tier_min, tier_max, list_price, currency, term_months, product_id
   Optional: product_type (data_license, api_access, software, service, other), product_name,
             product_family, conferred_right (the right granted to the customer: one of the nine),
+            right_basis (stated, inferred or assumed: how the right was decided),
+            minimum_commitment, retention_term, audit_right (terms that must travel with any right that keeps
+            or reuses data),
             delivery, floor_price, tier_model (all_units or graduated), status, version,
             annual_revenue, customers
   An older column named use_right is read as conferred_right. A dataset_id column, if present, is
@@ -35,6 +38,12 @@ Checks (E = error, W = warning)
   E  missing columns, unparsable numbers, duplicate lines
   E  list price missing or not positive; floor above list
   W  floor price missing (E in release mode)
+  E  line_id blank or duplicated; currency, term_months or tier_min blank; non-finite or non-positive numbers
+  E  no lines at all (release mode)
+  W  product_type blank or unknown (E in release mode: the granted-right gate cannot be applied)
+  W  right_basis inferred or assumed (E in release mode: a right must be stated, not guessed)
+  W  a right that keeps or reuses data (everything broader than internal_use except display_to_third_parties)
+     without minimum_commitment, retention_term and audit_right (E in release mode)
   W  data or API line with no conferred_right (E in release mode); W conferred_right not one of the nine
   E  tier overlap; W tier gap
   E  unit price rises with volume
@@ -57,16 +66,27 @@ BROADER_THAN_INTERNAL = set(RIGHTS) - {"internal_use"}
 PRODUCT_TYPES = {"data_license", "api_access", "software", "service", "other"}
 SCOPE_TYPES = {"data_license", "api_access"}
 REQUIRED = ["line_id", "unit", "tier_min", "tier_max", "list_price", "currency", "term_months"]
+# Rights that keep, reuse or pass on data. They carry a minimum commitment, a retention term and audit (operating rule 3).
+KEEPING_RIGHTS = set(RIGHTS) - {"internal_use", "display_to_third_parties"}
+TERM_FIELDS = ["minimum_commitment", "retention_term", "audit_right"]
+
+
+def blank(v):
+    return v is None or str(v).strip() == "" or str(v).strip().lower() in ("unknown", "tbd", "n/a")
 
 
 def num(value, line, field, issues):
     if value is None or str(value).strip() == "":
         return None
     try:
-        return float(str(value).replace(",", ""))
+        x = float(str(value).replace(",", ""))
     except ValueError:
         issues.append(("E", line, f"{field} is not a number: {value!r}"))
         return None
+    if not math.isfinite(x):
+        issues.append(("E", line, f"{field} is not a finite number: {value!r}"))
+        return None
+    return x
 
 
 def fmt(x):
@@ -85,7 +105,11 @@ def main():
     args = ap.parse_args()
     release = args.mode == "release"
 
-    with open(args.pricebook, newline="", encoding="utf-8-sig") as f:
+    try:
+        f = open(args.pricebook, newline="", encoding="utf-8-sig")
+    except OSError as e:
+        sys.exit(f"Cannot read the price book {args.pricebook}: {e.strerror or e}")
+    with f:
         reader = csv.DictReader(f)
         fields = reader.fieldnames or []
         missing = [c for c in REQUIRED if c not in fields]
@@ -99,14 +123,34 @@ def main():
     issues = []
     if legacy:
         issues.append(("W", "price book", "column use_right is read as conferred_right (the right granted to the customer). Rename it"))
-    seen, parsed, no_scope = set(), [], []
+    seen, parsed, no_scope, seen_ids = set(), [], [], set()
+    if not lines:
+        issues.append(("E" if release else "W", "price book", "the price book has no lines"))
     for row in lines:
         lid = get(row, "line_id") or "(no line_id)"
         pid = get(row, "product_id")
         cr = get(row, "conferred_right") or get(row, "use_right")
-        ptype = get(row, "product_type") or ("data_license" if get(row, "dataset_id") else "other")
-        if ptype not in PRODUCT_TYPES:
-            issues.append(("W", lid, f"product_type {ptype!r} is not one of {', '.join(sorted(PRODUCT_TYPES))}"))
+        ptype_raw = get(row, "product_type")
+        ptype = ptype_raw or ("data_license" if get(row, "dataset_id") else "other")
+        if ptype_raw and ptype_raw not in PRODUCT_TYPES:
+            issues.append(("E" if release else "W", lid, f"product_type {ptype_raw!r} is not one of {', '.join(sorted(PRODUCT_TYPES))}; the granted-right gate cannot be applied"))
+        elif not ptype_raw:
+            issues.append(("E" if release else "W", lid, "product_type is blank; the granted-right gate cannot be applied. Set it (data_license, api_access, software, service, other)"))
+        if get(row, "line_id") == "":
+            issues.append(("E", lid, "line_id is blank"))
+        elif get(row, "line_id") in seen_ids:
+            issues.append(("E", lid, "line_id is duplicated"))
+        seen_ids.add(get(row, "line_id"))
+        if get(row, "currency") == "":
+            issues.append(("E", lid, "currency is blank"))
+        if get(row, "term_months") == "":
+            issues.append(("E", lid, "term_months is blank (use 0 or 1 for one-time prices and say so in notes)"))
+        else:
+            tm = num(row.get("term_months"), lid, "term_months", issues)
+            if tm is not None and tm < 0:
+                issues.append(("E", lid, "term_months is negative"))
+        if get(row, "tier_min") == "":
+            issues.append(("E", lid, "tier_min is blank (use 0 or 1 for the first tier); the line cannot be tier-checked"))
         tmin = num(row.get("tier_min"), lid, "tier_min", issues)
         tmax = num(row.get("tier_max"), lid, "tier_max", issues)
         lp = num(row.get("list_price"), lid, "list_price", issues)
@@ -120,6 +164,17 @@ def main():
             no_scope.append(lid)
         if cr and cr not in RIGHTS:
             issues.append(("W", lid, f"conferred_right {cr!r} is not one of the nine rights: {', '.join(RIGHTS)}"))
+        basis = get(row, "right_basis").lower()
+        if cr and basis in ("inferred", "assumed"):
+            issues.append(("E" if release else "W", lid, f"conferred_right {cr} is {basis}, not stated. Confirm it from the contract or product definition and set right_basis to stated"))
+        if cr in KEEPING_RIGHTS and ptype in SCOPE_TYPES:
+            miss_terms = [f for f in TERM_FIELDS if blank(row.get(f))]
+            if miss_terms:
+                issues.append(("E" if release else "W", lid, f"{cr} keeps or reuses data, so it needs {', '.join(miss_terms)} (operating rule 3)"))
+        if tmin is not None and tmin < 0:
+            issues.append(("E", lid, "tier_min is negative"))
+        if tmin is not None and tmax is not None and tmax < tmin:
+            issues.append(("E", lid, f"tier_max {tmax:g} is below tier_min {tmin:g}"))
         if lp is None:
             issues.append(("E", lid, "list_price is required"))
         elif lp <= 0:
@@ -163,12 +218,14 @@ def main():
     base = {}
     for p in parsed:
         r = p["row"]
+        fam = get(r, "product_family") or p["pid"]
         if p["cr"] == "internal_use" and p["lp"] is not None:
-            base[(p["pid"], get(r, "delivery"), get(r, "unit"), get(r, "currency"), get(r, "term_months"), p["tmin"])] = p["lp"]
+            base[(fam, get(r, "delivery"), get(r, "unit"), get(r, "currency"), get(r, "term_months"), p["tmin"])] = p["lp"]
     for p in parsed:
         r = p["row"]
+        fam = get(r, "product_family") or p["pid"]
         if p["cr"] in BROADER_THAN_INTERNAL and p["lp"] is not None:
-            k = (p["pid"], get(r, "delivery"), get(r, "unit"), get(r, "currency"), get(r, "term_months"), p["tmin"])
+            k = (fam, get(r, "delivery"), get(r, "unit"), get(r, "currency"), get(r, "term_months"), p["tmin"])
             if k in base and p["lp"] < base[k]:
                 issues.append(("E", p["lid"], f"{p['cr']} list price {p['lp']} is below internal_use {base[k]} for the same tier"))
 

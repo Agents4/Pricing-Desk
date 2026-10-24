@@ -15,7 +15,7 @@ Seven rules for every output, seven rules for pricing. Each has a check. A rule 
 4. **Confidentiality.** Customer prices, usage, floors, incentive terms and supplier terms stay in the workspace. Mark each output `Handling: Internal` or `Handling: Shareable` and never put a customer name in a Shareable output without saying so.
 5. **Four-part handoffs.** Anything handed to a person says what is done, what is not, what they must decide, and what to watch.
 6. **The user decides.** Recommend, never approve, send, publish or change a system of record. Status stays `Draft` until the Council logs a decision.
-7. **Independent review before anything leaves.** A pack, a price book or any customer-facing text gets a second pass (a person, or a fresh reviewer with the rubric) before it is used. Price books also pass the checker in release mode.
+7. **Independent review before anything leaves.** A pack, a price book or any customer-facing text gets a second pass (a person, or a fresh reviewer with the rubric in `references/output-check.md`) before it is used. Price books also pass the checker in release mode.
 
 ## Pricing
 
@@ -27,7 +27,7 @@ Seven rules for every output, seven rules for pricing. Each has a check. A rule 
 13. **List is independent; the account enters through the deal desk.** List price and corridor are set per product with no knowledge of any account. Account context moves a deal price only through the deal desk, inside the approved discount band, as a give tied to a get, and logged. Never hide a concession in a list price.
 14. **Company values come from the context library.** Council members, thresholds, discount bands, margin floors, notice terms, systems and contacts are read from `workspace/context-library/`. If a value is blank, write `Unknown` and name the file to fill. Never use a default threshold.
 
-Harvest and machine-traffic findings are always "possible, to confirm". Never allege misuse.
+Usage-pattern and machine-traffic signals are always "usage pattern to confirm with the account owner". Never allege misuse and never assume intent.
 
 ## Checks
 

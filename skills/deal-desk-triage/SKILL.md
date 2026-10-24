@@ -25,13 +25,13 @@ Not for: reviewing one deal in depth (`deal-desk-review`), a data licence (`data
 
 ## Inputs
 
-A list of open requests: id, account, product, request type, total contract value, requested discount, received and due dates. A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
+A list of open requests: id, account, product, request type, total contract value, requested discount, received and due dates, and whether the account has an anchor deal (`anchor_deal`, optional). A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
 
 ## Procedure
 
-1. **Rank with the script.** Run `scripts/triage_rank.py --in <file> --today <date>`; add `--band-pct N` only when the band is known from the context library. Order: overdue first, then due soonest, then larger value.
-2. **Confirm the route** for each row: non-standard quote to `deal-desk-review`; API or data access request to `api-access-request`; data licence to `data-license-pricing`; renewal to `deal-desk-review` with `account-price-fit`; standard quote from the price book with no review.
-3. **Anchor-deal accounts.** If the account has an anchor deal (see `deal-structures.md`), run `account-price-fit` before `deal-desk-review`. Do not review an add-on in isolation.
+1. **Rank with the script.** Run `scripts/triage_rank.py --in <file> --today <date>`; add `--band-pct N` only when the band is known from the context library. With no band, every request that asks for a discount goes to review (fail closed). The script overrides the request type when a discount is over the band, so a label cannot skip review. Order: overdue first, then due soonest, then larger value. Rows it cannot read are listed at the top; fix them and rerun.
+2. **Confirm the route** for each row. One owner per question: `api-access-request` owns any new or expanded API access; `data-license-pricing` owns a data licence, and pricing the right once the purpose is decided; `deal-desk-review` shapes a non-standard quote or renewal; rights questions go to `rights-handoff`. A standard quote from the price book needs no review only when it asks for no discount.
+3. **Anchor-deal accounts.** If the account has an anchor deal (see `deal-structures.md`), including a data licence for that account, run `account-price-fit` before `deal-desk-review` or `data-license-pricing`. Do not review an add-on in isolation. Review requests from the same account together.
 4. **Check the exception log.** Mark rows whose exception has expired or whose get has not arrived. List unrequited concessions with owner and date.
 5. **Name what blocks.** For each request, the missing input and who supplies it. A rights question goes to `rights-handoff`.
 6. **Do not approve.** The desk recommends; the approver named in `pricing-governance.md` decides. If it is Unknown, say so.

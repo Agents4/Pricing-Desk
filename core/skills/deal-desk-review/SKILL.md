@@ -21,7 +21,7 @@ Turn a deal request into a decision-ready package for the approver. You recommen
 - A requested discount is outside the band, or a non-standard term is asked for.
 - New or expanded API access is requested (the purpose question applies).
 
-Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), or a data licence request (`data-license-pricing`).
+Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), a data licence request (`data-license-pricing`), or new or expanded API access (`api-access-request`). For an account with an anchor deal, run `account-price-fit` first and record any concession in the exception log.
 
 ## Inputs
 
@@ -32,7 +32,7 @@ Ask for anything missing before analyzing. Do not guess.
 1. **Deal request**: customer, segment, products and families (API, software, data), volumes or seats, term, requested price or discount, requested non-standard terms, deadline, competing alternative if known.
 2. **Price book**: current list prices, tiers, units, and fences (file or pasted table).
 3. **Approval matrix**: tier triggers, approvers, margin floors per product family.
-4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (at least 5 if available).
+4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (the minimum number is in the review parameters in `pricing-governance.md`; Unknown if blank, so say how many you found).
 5. **Customer context**: current spend, usage history, renewal date, open disputes, strategic notes.
 6. **For new or expanded API access: the purpose.** What will the customer do with the responses, and for how long will they keep them? Ask when the request does not say. Booking and serving their own traffic is the standard API use. Collecting, storing or analysing data in bulk, rebuilding it, reselling it or feeding AI is a data right and is priced as one (see `price-book-builder/references/api-access-scope.md`).
 
@@ -58,7 +58,7 @@ Deliver in this order, kept short enough to read in two minutes:
 4. **Comparables**: small table.
 5. **Risks and open questions** for Finance, Legal, Product.
 6. **Counteroffers** with their waterfalls.
-7. **Approval memo** (under 150 words) the analyst can paste into the approval request: ask, rationale, tier, risks, recommendation.
+7. **Approval memo** (one short paragraph) the analyst can paste into the approval request: ask, rationale, tier, risks, recommendation.
 8. **Inputs and assumptions used**: files, date ranges, assumptions, and anything missing.
 
 ## Quality gate

@@ -69,9 +69,9 @@ The user's answers, one at a time. Optional documents they supply: org chart, ap
 1. **Check state.** Read the existing files. Say which are filled and which are template. Offer to start with the one that unblocks the most (usually governance).
 2. **Interview one question at a time**, in this order, following `references/interview-protocol.md`. Give an example of the kind of answer you need. Follow up on a thin answer before moving on.
    - Business and products: what the company sells, to whom, how revenue is earned (including incentives paid to agencies).
-   - Governance: Council members and chair; who proposes and who approves each decision; discount bands and margin floors by product family; deal desk authority; target response times (label as proposals until agreed).
-   - Deal structures: how anchor deals work, incentives paid and how they are tiered and measured, look-to-book clauses, notice and price-protection terms, what is normally traded.
-   - Systems: where the price book, usage, invoices, deal log, cost to serve and CRM live now and after the move; export formats; approved tools.
+   - Governance: Council members and chair; who proposes and who approves each decision; discount bands and margin floors by product family (the floor is a share of price); the largest total discount an account may reach; deal desk authority and escalation path; target response times (label as proposals until agreed). Then the **review parameters**, one at a time, because every flag and window in the skills reads them: trend windows, minimum deals to cite, realization and backtest windows, renewal review window, cost-change threshold, reconciliation tolerance, freshness limit, the harvest-screen settings, and the price-corridor settings (expected discount, value cap, weights, cutoffs). It is fine for the answer to be "we have none yet": record Unknown.
+   - Deal structures: how anchor deals work, incentives paid and how they are tiered and measured, look-to-book clauses, notice and price-protection terms, what is normally traded, the value of each get the Council would accept, and what each give costs us.
+   - Systems: where the price book, usage, invoices, deal log, cost to serve and CRM live now and after the move; export formats; approved tools; who owns metering and unit definitions; who signs off data checks.
    - Rights hand-off: product manager contact, how lists are sent, how answers return.
    - Guardrails and writing style: what must never leave, who reviews packs; two or three examples they are proud of and rules, not adjectives.
 3. **Summarize after each section** in two to four lines and ask to confirm or correct. List what is still Unknown.
@@ -167,7 +167,8 @@ Read if present: `workspace/context-library/pricing-governance.md`, `product-cat
 | Decide what to charge for a new product, right or API use | `data-price-setting` (after `analog-research` if there is no price history) |
 | Handle today's quote requests | `deal-desk-triage` |
 | Review one deal | `deal-desk-review`, with `account-price-fit` when there is an anchor deal |
-| Price a data licence or an API request that would collect data | `data-license-pricing`, `api-access-request` |
+| Handle new or expanded API access, including access that may collect data | `api-access-request` |
+| Price a data licence, or the right once the purpose is decided | `data-license-pricing` |
 | Run the weekly realization and API usage review | `weekly-pricing-review` |
 | Prepare the Council | `council-decision-pack` |
 | Release the price book | `price-book-release` |

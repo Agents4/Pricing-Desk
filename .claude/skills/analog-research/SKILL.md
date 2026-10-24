@@ -31,7 +31,7 @@ The construct to price in one sentence: product, buyer, use, candidate unit. Whe
 
 1. **Public sources only** (rule 11). Search the open web; no logins, no contact with competitors, no customer data in queries. Prefer the company's own pricing or announcement page; otherwise press or analyst coverage, marked secondary.
 2. **Fetch the page** and read it. A search result is not a source. If a page cannot be reached, say so, write the entry as to verify, and never fill gaps from memory.
-3. **Record each analog** with `assets/analog-entry.md`: source URL, published and access dates, unit, metric, right or use granted, comparability 1 to 5 with the reason. Quote numbers exactly and tag them F with the source.
+3. **Record each analog** with `assets/analog-entry.md`: source URL, published and access dates, unit, metric, right or use granted, comparability as "N of 5" with the reason (1 to 5; when an analog becomes a market comparable in `data-price-setting`, it is entered as N ÷ 5). Quote numbers exactly and tag them F with the source.
 4. **Say what it suggests (I) and what it does not show.** One analog is an anecdote. Name the structure, not the price.
 5. **Check the library** with `scripts/check_analogs.py --dir workspace/context-library/analogs`, adding `--today` and `--max-age-days` only if the company has a re-check rule.
 6. **Summarise** the structures seen, the ones to test, and the ones to avoid, with the analogs behind each. See `references/frameworks.md` for the named methods and their verification status.

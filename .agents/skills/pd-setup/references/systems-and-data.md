@@ -18,6 +18,11 @@ last_reviewed: "{{date}}"
 | Deal log and quotes | Unknown | Unknown | Unknown | Unknown |
 | Cost to serve | Unknown | Unknown | Unknown | Unknown |
 | CRM | Unknown | Unknown | Unknown | Unknown |
+| Metering and unit definitions | Unknown | Unknown | Unknown | Unknown |
 
 **Approved tools for customer data:** Unknown
 **Platform now and after the move:** Unknown
+
+**Data owner who signs off data checks before results leave the desk:** Unknown
+**Metering owner for unit-definition questions:** Unknown
+**Where customer-level reports may be shared:** Unknown

@@ -13,11 +13,11 @@ Method questions, quizzes and onboarding for the pricing desk. Contains no compa
 
 | File | Words |
 |---|---|
-| `01-operating-rules-and-output-conventions.md` | 956 |
-| `02-spine-and-rhythms.md` | 1608 |
-| `03-frameworks-and-sources.md` | 746 |
-| `04-skill-procedures.md` | 14419 |
-| `05-system-skill-procedures.md` | 1810 |
+| `01-operating-rules-and-output-conventions.md` | 967 |
+| `02-spine-and-rhythms.md` | 1625 |
+| `03-frameworks-and-sources.md` | 887 |
+| `04-skill-procedures.md` | 14959 |
+| `05-system-skill-procedures.md` | 1933 |
 
 Source limits are Google's and change: verify them on Google's usage-limits page before relying on them. Sales-OS notes about 50 sources per notebook on the consumer tier and 300 sources with 500,000 words or 500 MB per source on Enterprise (not re-verified here).
 

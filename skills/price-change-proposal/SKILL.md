@@ -13,7 +13,7 @@ metadata:
 
 Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
 
-Turn a proposed price or packaging change into a decision package for the Pricing Council. The council decides; Legal confirms notice terms.
+Turn a proposed price or packaging change into a decision package for the Pricing Council. The council decides. Notice terms are read from the contracts, and the approver for contract questions is the one named in `pricing-governance.md` (Unknown if blank).
 
 ## When to use
 
@@ -39,7 +39,7 @@ Context library files read: `pricing-governance.md`, `deal-structures.md` (notic
 1. **Restate the change** in one table: before and after, by plan and unit.
 2. **Segment customers** by how the change affects them: unaffected, increase, decrease, and by size of change. Compute with code.
 3. **Check contracts.** Mark each customer: change can take effect at the proposed date, only at renewal, or only after notice. Show the earliest effective date per group and the share of revenue in each. Flag MFN or price-protection conflicts for Legal. Do not interpret contract language; quote the clause reference and escalate.
-4. **Model scenarios with code**: base, low, and high, varying volume response and churn by segment. Show revenue, margin if cost is supplied, and customers lost or downgraded, month by month for 12 months, with the assumptions in a table.
+4. **Model scenarios with code**: base, low, and high, varying volume response and churn by segment. Show revenue, margin if cost is supplied, and customers lost or downgraded, month by month over the horizon in the review parameters in `pricing-governance.md` (ask if Unknown), with the assumptions in a table.
 5. **Compute sensitivities**: which assumption moves the result most.
 6. **Build the notice calendar**: contract notice deadlines, internal approval dates, communication dates, effective dates.
 7. **Draft a risk register**: churn in key accounts, win-rate effect, partner or channel reaction, billing and system readiness, legal exposure, and perception risk. Give each a mitigation and owner role.
@@ -49,7 +49,7 @@ Context library files read: `pricing-governance.md`, `deal-structures.md` (notic
 
 1. **One-page council memo**: decision requested, change, rationale, scenario results in a small table, top three risks, recommendation, and the conditions for approval.
 2. **Scenario model summary** and **assumptions table**.
-3. **Impacted customer list** (top 25 by revenue plus counts by group).
+3. **Impacted customer list** (the largest accounts by revenue, list length from the review parameters in `pricing-governance.md`, plus counts by group).
 4. **Contract and notice summary** with items escalated to Legal.
 5. **Notice calendar**.
 6. **Risk register.**

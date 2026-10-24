@@ -9,7 +9,8 @@
     "current": 0.6,
     "reference": 0.9,
     "resolved": 0.85,
-    "elasticity": 1.0
+    "elasticity": 1.0,
+    "max_factor": 1.5
   },
   "cost": {
     "annual_fixed": 450000,
@@ -95,7 +96,8 @@
         "segment": "Airline revenue management",
         "max_price_per_unit": 3800
       }
-    ]
+    ],
+    "min_points": 5
   },
   "rights": [
     {
@@ -126,5 +128,18 @@
       "incremental_cost_per_unit": 120,
       "basis": "agent grounding case: assistants answer fare-trend questions from this data (invented)"
     }
-  ]
+  ],
+  "weights": {
+    "value": 0.4,
+    "market": 0.3,
+    "wtp": 0.3
+  },
+  "review": {
+    "divergence_flag": 1.5,
+    "divergence_stop": 2,
+    "segment_spread_flag": 1.5,
+    "weak_comparability": 0.5
+  },
+  "term_months": 12,
+  "_note": "Every company value in this file (discount, value cap, weights, review cutoffs, WTP minimum, coverage cap) is invented to show the method. Real values come from pricing-governance.md or the Council; the tool has no defaults for them."
 }

@@ -19,9 +19,28 @@ from .mdparse import split_frontmatter
 SPEC_KEYS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
 NAME_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 REF_RE = re.compile(r"(?<![\w/.-])((?:references|assets|scripts)/[A-Za-z0-9_./-]*[A-Za-z0-9_])")
-THRESHOLD_RE = re.compile(r"\b\d+(\.\d+)? ?(%|percent|days?)\b", re.IGNORECASE)
+THRESHOLD_RE = re.compile(
+    r"\b\d+(\.\d+)? ?(%|percent|days?|months?|weeks?|points?|deals?|customers?|accounts?|calls?)\b"
+    r"|\b(top|first|last|at least|fewer than|more than|over|under|above|below) \d+\b"
+    r"|\b\d+ or (more|fewer|less)\b"
+    r"|\b\d+(\.\d+)?x\b",
+    re.IGNORECASE,
+)
+# A script may not carry a company number as a default: argparse numeric defaults and dict-style .get(key, N).
+SCRIPT_DEFAULT_RE = re.compile(
+    r"add_argument\([^)]*default\s*=\s*-?\d"
+    r"|\.get\(\s*[\"'][A-Za-z_]+[\"']\s*,\s*(?!0\b|1\b|0\.0\b|1\.0\b)-?\d+(\.\d+)?\s*\)"
+)
 NOT_A_THRESHOLD_RE = re.compile(r"(for example|e\.g\.|Unknown|invented|\bn=)", re.IGNORECASE)
 IGNORE_NAMES = {".DS_Store", "Thumbs.db", "__pycache__", ".gitkeep"}
+# Shared files every skill receives without listing them (the closing check AGENTS.md tells every skill to walk).
+AUTO_INCLUDES = ["rubrics/output-check.md"]
+
+
+def safe_include(rel: str) -> bool:
+    """An include is a path inside core/: no absolute path, no .. segment."""
+    r = rel.replace("\\", "/")
+    return bool(r) and not r.startswith("/") and not re.match(r"^[A-Za-z]:", r) and ".." not in r.split("/")
 REQUIRED_SECTIONS = [
     ("SK030", r"^##\s+When to use"),
     ("SK031", r"^##\s+(Procedure|Steps)"),
@@ -171,7 +190,14 @@ def validate_skill(skill: Skill, core_dir: str) -> List[Issue]:
             warn(code, "missing recommended section matching %r" % rx)
 
     dests: Dict[str, str] = {}
+    for rel in AUTO_INCLUDES:
+        if os.path.isfile(os.path.join(core_dir, rel)):
+            dests[skill.include_dest(rel)] = rel
+    auto_dests = set(dests)
     for rel in skill.includes:
+        if not safe_include(rel):
+            err("SK043", "include %r must be a path inside core/ (no leading / and no ..)" % rel)
+            continue
         if not os.path.isfile(os.path.join(core_dir, rel)):
             err("SK040", "include not found: core/%s" % rel)
             continue
@@ -189,13 +215,22 @@ def validate_skill(skill: Skill, core_dir: str) -> List[Issue]:
         if m not in available:
             err("SK050", "body references %s which is neither skill-local nor included" % m)
     for d in sorted(dests):
-        if d not in body_refs:
+        if d not in body_refs and d not in auto_dests:
             warn("SK051", "included %s is never referenced in the body" % d)
     # company values come from the context library (rule 14): flag bare numeric thresholds
     for n, line in enumerate(skill.body.splitlines(), 1):
         m = THRESHOLD_RE.search(line)
         if m and not NOT_A_THRESHOLD_RE.search(line):
             warn("SK090", "line %d has a numeric threshold or target (%s); company values come from the context library, otherwise say Unknown" % (n, m.group(0)))
+    scripts_dir = os.path.join(skill.dir, "scripts")
+    if os.path.isdir(scripts_dir):
+        for f in sorted(os.listdir(scripts_dir)):
+            if not f.endswith(".py"):
+                continue
+            with open(os.path.join(scripts_dir, f), encoding="utf-8", errors="replace") as fh:
+                for n, line in enumerate(fh, 1):
+                    if SCRIPT_DEFAULT_RE.search(line) and "threshold-ok" not in line:
+                        warn("SK091", "scripts/%s line %d sets a numeric default (%s); company values come from the input or the context library" % (f, n, line.strip()[:70]))
     for root, _, files in os.walk(skill.dir):
         for f in files:
             if f in IGNORE_NAMES:
@@ -232,6 +267,11 @@ def compile_skill(skill: Skill, core_dir: str, dest_root: str) -> List[str]:
     put(os.path.join(skill.dir, "SKILL.md"), "SKILL.md")
     for rel in skill.local_files():
         put(os.path.join(skill.dir, rel), rel)
+    for rel in AUTO_INCLUDES:
+        if os.path.isfile(os.path.join(core_dir, rel)):
+            put(os.path.join(core_dir, rel), skill.include_dest(rel))
     for rel in skill.includes:
+        if not safe_include(rel):
+            raise ValueError("skill %s: include %r must be a path inside core/" % (skill.name, rel))
         put(os.path.join(core_dir, rel), skill.include_dest(rel))
     return sorted(written)

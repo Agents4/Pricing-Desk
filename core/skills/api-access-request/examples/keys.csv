@@ -1,5 +1,6 @@
-key_id,customer,searches,bookings,distinct_queries,retention_days
-K-1,Atlas Travel (invented),1200000,9000,300000,
-K-2,Cedar OTA (invented),40000,200,38000,365
-K-3,Delta TMC (invented),500000,5000,60000,
-K-4,Fern Labs (invented),250000,0,240000,
+key_id,customer,segment,searches,bookings,distinct_queries,retention_days,kept_share
+K-1,Atlas Travel (invented),TMC,1200000,9000,300000,,
+K-2,Cedar OTA (invented),OTA,40000,200,38000,365,0.9
+K-3,Delta TMC (invented),TMC,500000,5000,60000,,
+K-4,Fern Labs (invented),OTA,250000,0,240000,,
+K-5,Fern Labs (invented),OTA,180000,0,176000,,

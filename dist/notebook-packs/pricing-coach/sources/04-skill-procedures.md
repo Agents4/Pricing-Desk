@@ -82,7 +82,7 @@ The construct to price in one sentence: product, buyer, use, candidate unit. Whe
 
 1. **Public sources only** (rule 11). Search the open web; no logins, no contact with competitors, no customer data in queries. Prefer the company's own pricing or announcement page; otherwise press or analyst coverage, marked secondary.
 2. **Fetch the page** and read it. A search result is not a source. If a page cannot be reached, say so, write the entry as to verify, and never fill gaps from memory.
-3. **Record each analog** with `assets/analog-entry.md`: source URL, published and access dates, unit, metric, right or use granted, comparability 1 to 5 with the reason. Quote numbers exactly and tag them F with the source.
+3. **Record each analog** with `assets/analog-entry.md`: source URL, published and access dates, unit, metric, right or use granted, comparability as "N of 5" with the reason (1 to 5; when an analog becomes a market comparable in `data-price-setting`, it is entered as N ÷ 5). Quote numbers exactly and tag them F with the source.
 4. **Say what it suggests (I) and what it does not show.** One analog is an anecdote. Name the structure, not the price.
 5. **Check the library** with `scripts/check_analogs.py --dir workspace/context-library/analogs`, adding `--today` and `--max-age-days` only if the company has a re-check rule.
 6. **Summarise** the structures seen, the ones to test, and the ones to avoid, with the analogs behind each. See `references/frameworks.md` for the named methods and their verification status.
@@ -121,14 +121,14 @@ Not for: tier design (`api-usage-tier-fit`), a data licence the customer asked f
 
 1. **Purpose**, in the requester's words: what will be done with the responses, for whom, and how long they are kept. Ask when the request does not say. One question at a time.
 2. **Usage**, if a key exists: searches, bookings, distinct queries, retention if known (CSV, see `examples/keys.csv`).
-3. **Segment median look-to-book** and the **screen multiple**. Both are company values from `pricing-governance.md` or the API policy in `systems-and-data.md`. There is no default. If the multiple is Unknown, ratios are shown and nothing is flagged.
+3. **Screen settings** from the review parameters in `pricing-governance.md`: the median look-to-book for each segment, the multiple of the median, the distinct-query share, the retention days and the minimum volume. There is no default for any of them. A setting that is Unknown switches that signal off, and the report says so; a missing median stops the run.
 4. The nine rights in `references/operating-rules.md` (rule 8): which does the stated purpose need?
 
 ## Procedure
 
 1. **Classify the purpose.** Serving the customer's own booking traffic is standard API use. Collecting, storing, analysing in bulk, rebuilding, reselling or feeding AI is a data right and is priced as one.
-2. **Screen usage** with `scripts/harvest_screen.py --in <file> --segment-median-l2b N [--multiple X]`. The screen reports look-to-book, the multiple of the segment median, and the share of distinct queries. A high distinct-query share with a high ratio is a pattern worth a question. A flag reads "possible data collection, to confirm". It is never a finding against the customer.
-3. **Ask the account owner** for any flagged key, without accusing. Record the answer.
+2. **Screen usage** with `scripts/harvest_screen.py --in <file> --segment-median NAME=N [--multiple X] [--distinct-ratio X] [--retention-days N] [--min-volume N]`. It reports look-to-book against the segment median, the share of distinct queries and retention, for each key and rolled up by customer. It stops on blank or impossible counts. A flag reads "pattern to confirm with the account owner" and lists the signals. It is never a finding against the customer.
+3. **Ask the account owner** about any flagged customer, using the neutral script in `references/harvest-handling.md`. Preserve the evidence and read the contract first; Legal is consulted before first contact if the terms are unclear. Record the answer.
 4. **Name the granted right** the request needs. If it is more than API serving, price it with `data-license-pricing` and hand the rights question to the product manager with `rights-handoff`.
 5. **Price the scope.** Standard API use goes to the tier in the price book (`api-usage-tier-fit`). Anything wider is a different line with a different price. Never quote bulk or retention use at a per-call booking rate.
 6. **Account context.** If the account has an anchor deal, run `account-price-fit` before offering any concession.
@@ -143,7 +143,7 @@ Header; recommendation in one line; purpose and right table; screen results; ope
 - The purpose is stated, or the first open question is the purpose.
 - Every ratio came from the script or is shown with its inputs.
 - No threshold appears that did not come from the context library or the user.
-- Flags are worded as questions to confirm, not conclusions.
+- Flags are worded as questions to confirm, not conclusions, and no one is told they did something wrong.
 - A right wider than API serving is never priced as API serving.
 - Nothing is sent to the customer; no key is issued or revoked by this skill.
 
@@ -179,20 +179,20 @@ If call classes are not defined in the data, ask for the mapping before analyzin
 ## Procedure
 
 1. **Validate the data.** Check coverage by day, missing customers, duplicate rows, and unit consistency. Report gaps.
-2. **Profile usage with code** per customer: monthly volume by call class, trend (3 and 6 month), peak versus average, look-to-book ratio (search or price calls per booking), and share of calls throttled or erroring.
+2. **Profile usage with code** per customer: monthly volume by call class, trend over the windows in the review parameters in `pricing-governance.md` (Unknown if blank: ask), peak versus average, look-to-book ratio (search or price calls per booking), and share of calls throttled or erroring.
 3. **Tier fit.** Compare actual and projected volume with the plan: utilization of commit, overage incurred, and what the bill would be on each tier at the same usage. Mark each customer: right-sized, under-using (downgrade or churn risk), over-using (upsell or overage exposure), or unusual.
 4. **Look-to-book check.** Flag customers whose ratio is far above their segment median; these consume capacity without conversion and may need a ratio-based fee or rate-limit change.
 5. **Agent-traffic flags.** Identify patterns that look automated or agent-driven: very high call rates, flat hourly distribution, repeated near-identical queries, large bursts. Mark them as "possible machine traffic, to confirm" and never as fact.
-6. **Harvest check.** For each customer, compute: distinct-query ratio (distinct origin, destination and date combinations over total search calls), look-to-book against the segment median, calls per key against bookings, coverage of the market swept, and the share of calls with no booking behind them. Read `../price-book-builder/references/api-access-scope.md`. Flag customers whose pattern looks like collecting data rather than serving bookings as "possible data collection, to confirm". Never call it misuse. A flagged customer is buying the booking right and using a data right. Options for the account owner: price the use as a data licence with a minimum commitment, add a look-to-book or distinct-query fence with an overage rate, set a retention term, or move them to a data product. Rate limits alone are not a price.
+6. **Harvest check.** For each customer, compute: distinct-query ratio (distinct origin, destination and date combinations over total search calls), look-to-book against the segment median, calls per key against bookings, coverage of the market swept, and the share of calls with no booking behind them. Read `../price-book-builder/references/api-access-scope.md`. Use `../api-access-request/scripts/harvest_screen.py` (it rolls keys up by customer and needs the company values from the review parameters). Where the pattern differs from the segment, record it as "usage pattern to confirm with the account owner" and follow `../api-access-request/references/harvest-handling.md`. A pattern is a question, not a finding: do not call it misuse and do not assume intent. If the customer confirms a wider use than the booking right, the price needs to cover it. Options for the account owner: price the use as a data licence with a minimum commitment, add a look-to-book or distinct-query fence with an overage rate, set a retention term, or move them to a data product. Rate limits alone are not a price.
 7. **Renewal pricing view.** For customers renewing within the renewal review window set in `pricing-governance.md` (ask if it is Unknown), show current spend, usage-implied spend, suggested tier, and the range of price actions that keep the customer on a fair value metric.
-8. **Metering questions.** List unit definitions that caused ambiguity in the analysis, for the Pricing Operations Manager.
+8. **Metering questions.** List unit definitions that caused ambiguity in the analysis, for the metering owner named in `systems-and-data.md` (Unknown if blank).
 
 ## Output
 
 1. **Headline findings** (three to five bullets, each with a number).
 2. **Tier-fit summary table**: counts and revenue by status (right-sized, under-using, over-using, unusual).
-3. **Top 15 action list**: customer, finding, suggested action, owner role, contract end date.
-4. **Look-to-book outliers**, **possible machine traffic** and **possible data collection** tables (with the figures behind each flag).
+3. **Action list** (length from the review parameters in `pricing-governance.md`; Unknown if blank, so ask): customer, finding, suggested action, owner role, contract end date.
+4. **Look-to-book outliers**, **possible machine traffic** and **usage-pattern** tables (with the figures behind each flag).
 5. **Renewal pipeline view**.
 6. **Metering and data questions.**
 7. **Inputs and assumptions used.**
@@ -308,11 +308,11 @@ Decide what the customer wants to do with the data, and what to charge for that.
 
 ## When to use
 
-- A customer asks to license a travel data product, or asks for API access to pull data in bulk.
+- A customer asks to license a travel data product.
 - A custom data deal needs pricing by the right granted.
-- An API request mentions keeping, analysing, reselling or AI use of responses.
+- `api-access-request` has found that an API request needs a wider right (keeping, analysing, reselling or AI use of responses) and the right needs a price.
 
-Not for: a standard quote inside the price book (`deal-desk-review`), or whether we hold a right (the product manager answers that).
+Not for: a new or expanded API access request (`api-access-request` owns it, and calls this skill to price the right), a standard quote inside the price book (`deal-desk-review`), or whether we hold a right (`rights-handoff`; the product manager answers that).
 
 ## Inputs
 
@@ -321,7 +321,7 @@ Context library files read: `pricing-governance.md`, `product-catalog.md`, `righ
 1. **The request**: customer, dataset, feed or API, fields and coverage (markets, carriers, properties, time range), refresh frequency, delivery method, term.
 2. **What the customer will do with it**, in their words: use it in their own business, show it to their own customers, resell it, combine it with other data, keep it, or use it for model training, retrieval, or agent grounding. For API requests, how long they will keep responses and how many calls they expect against how many bookings.
 3. **Price book** (built with the `price-book-builder` skill): subscription prices, volume tiers, uplifts by right granted. If a product or right is not there, use the `data-price-setting` skill.
-4. **Customer context**: current spend, products held, strategic importance.
+4. **Customer context**: current spend and products held. Strategic importance, if raised, moves a deal price only through `account-price-fit` and the deal desk, never the list or the corridor (rule 13).
 
 If the customer will not say what they will do with the data, do not price it as internal use. Price the broadest plausible use, or decline.
 
@@ -329,7 +329,7 @@ If the customer will not say what they will do with the data, do not price it as
 
 1. **Restate the request** in a table: dataset or API, fields, coverage, frequency, term, delivery, intended use.
 2. **Classify the right to grant** for each dataset: internal use only, internal analytics with outputs shared, display to third parties, redistribution, derivative data product, AI or model use (training, fine-tuning, retrieval, agent grounding). Quote the customer's own words that led to each classification and mark ambiguous cases.
-3. **For API requests, apply the harvest test.** Read `../price-book-builder/references/api-access-scope.md`. If the purpose is to collect, keep, analyse in bulk, rebuild or feed AI, it is a data right: price at the data-licence rate for that right, with a minimum commitment, a retention term and audit rights, not at the per-call booking rate.
+3. **For an API request that reached this skill, check the purpose first.** Read `../price-book-builder/references/api-access-scope.md`. If the purpose is to collect, keep, analyse in bulk, rebuild or feed AI, it is a data right: price at the data-licence rate for that right, with a minimum commitment, a retention term and audit rights, not at the per-call booking rate.
 4. **Check sensitivity.** Flag personal data, customer-contributed data, or supplier-confidential fields that need removal, aggregation or consent. These are questions for the product manager and Legal.
 5. **Price with code, from the price book or the `data-price-setting` skill.** Base subscription by coverage and frequency, volume tier, uplift for each right granted, term discount, and any approved exception band. Show the waterfall. Where no price book rule fits, say so and give a range with the reasoning, labeled as a proposal for the council.
 6. **Route** by the approval matrix in `pricing-governance.md`: standard (inside the price book) or non-standard. Redistribution, AI use, keeping or rebuilding data and exclusivity are the broad-right cases. If the matrix is not filled, the route is Unknown.
@@ -383,9 +383,9 @@ Context library files read: `pricing-governance.md` (margin floor), `product-cat
 1. **Product**: what a buyer receives, delivery, refresh, history. For a data or API product, the right the customer is granted (`base_right`): what they may do with the data or responses, and for how long they may keep them.
 2. **Rights to price as options** (data and API products): the broader rights customers ask for, such as display to third parties, redistribution, keeping and building on responses, and each AI use. Each is its own line with its own value case.
 3. **Coverage**: the share of the market, volume or parties the product includes, the coverage the value estimates assume, and the coverage if it widens.
-4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and Finance's margin floor.
+4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and the margin floor from `pricing-governance.md` (a share of price; Unknown if blank).
 5. **Customers and value**: segments, how many, how much each would use, and what the product is worth to each per year. Record the source of each estimate: estimate, interview, pilot, or contract data.
-6. **Market**: comparable products with a public or customer-supplied price and a comparability score from 0 to 1.
+6. **Market**: comparable products with a public or customer-supplied price and a comparability score from 0 to 1. An analog from the library is scored 1 to 5; enter it as the score divided by 5 (3 of 5 is 0.6) and say so.
 7. **Willingness-to-pay points**: the highest price each interviewed buyer would pay, from a study or interviews.
 
 If an input is missing, say what you cannot do without it. Run the calculator with what exists and let it report low confidence. Do not invent values.
@@ -431,8 +431,8 @@ It returns the floor, the value-based price and cap, the market and willingness-
 ### 6. Read the result like a pricer
 
 - **Not viable** (floor above value cap): no price works. Offer options: cut cost or scope, aim at a higher-value segment or right, spread cost across products, or re-check the value estimate.
-- **Anchors differ by more than 1.5x**: find out why. Usually a wrong unit, a weak comp, or a value estimate that is too low or too high. Do not average away a disagreement.
-- **Segment value-based prices differ by more than 1.5x**: consider fenced segment prices, with fences customers accept (use case, customer type, rights) and that cannot be arbitraged.
+- **Anchors differ by more than the cutoff in `review.divergence_flag` (from the review parameters in `pricing-governance.md`; with no cutoff the tool shows the ratio and does not judge it)**: find out why. Usually a wrong unit, a weak comp, or a value estimate that is too low or too high. Do not average away a disagreement.
+- **Segment value-based prices differ by more than `review.segment_spread_flag`**: consider fenced segment prices, with fences customers accept (use case, customer type, rights) and that cannot be arbitraged.
 - **Priced at the floor or at the cap**: the evidence does not support the target. Say so.
 - **Low confidence**: present as provisional, a range to test, with the next evidence to collect.
 
@@ -468,7 +468,7 @@ Before finishing, confirm each. They also bind every step above.
 - Whether we may grant a right is the product manager's check in the rights pack. If the product manager tells you a right cannot be granted, drop that line; do not price around it.
 - Label invented, illustrative, or assumed inputs. A worked example is not a quote.
 - Do not present a price as certain when confidence is Low.
-- Prices are proposals. The Pricing Council approves them and Finance confirms margin floors.
+- Prices are proposals. The Pricing Council approves them and the margin floors.
 - Keep customer-specific data (individual willingness to pay, contract prices) out of general outputs.
 
 ---
@@ -534,7 +534,7 @@ Turn a deal request into a decision-ready package for the approver. You recommen
 - A requested discount is outside the band, or a non-standard term is asked for.
 - New or expanded API access is requested (the purpose question applies).
 
-Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), or a data licence request (`data-license-pricing`).
+Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), a data licence request (`data-license-pricing`), or new or expanded API access (`api-access-request`). For an account with an anchor deal, run `account-price-fit` first and record any concession in the exception log.
 
 ## Inputs
 
@@ -545,7 +545,7 @@ Ask for anything missing before analyzing. Do not guess.
 1. **Deal request**: customer, segment, products and families (API, software, data), volumes or seats, term, requested price or discount, requested non-standard terms, deadline, competing alternative if known.
 2. **Price book**: current list prices, tiers, units, and fences (file or pasted table).
 3. **Approval matrix**: tier triggers, approvers, margin floors per product family.
-4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (at least 5 if available).
+4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (the minimum number is in the review parameters in `pricing-governance.md`; Unknown if blank, so say how many you found).
 5. **Customer context**: current spend, usage history, renewal date, open disputes, strategic notes.
 6. **For new or expanded API access: the purpose.** What will the customer do with the responses, and for how long will they keep them? Ask when the request does not say. Booking and serving their own traffic is the standard API use. Collecting, storing or analysing data in bulk, rebuilding it, reselling it or feeding AI is a data right and is priced as one (see `price-book-builder/references/api-access-scope.md`).
 
@@ -571,7 +571,7 @@ Deliver in this order, kept short enough to read in two minutes:
 4. **Comparables**: small table.
 5. **Risks and open questions** for Finance, Legal, Product.
 6. **Counteroffers** with their waterfalls.
-7. **Approval memo** (under 150 words) the analyst can paste into the approval request: ask, rationale, tier, risks, recommendation.
+7. **Approval memo** (one short paragraph) the analyst can paste into the approval request: ask, rationale, tier, risks, recommendation.
 8. **Inputs and assumptions used**: files, date ranges, assumptions, and anything missing.
 
 ## Quality gate
@@ -606,13 +606,13 @@ Not for: reviewing one deal in depth (`deal-desk-review`), a data licence (`data
 
 ## Inputs
 
-A list of open requests: id, account, product, request type, total contract value, requested discount, received and due dates. A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
+A list of open requests: id, account, product, request type, total contract value, requested discount, received and due dates, and whether the account has an anchor deal (`anchor_deal`, optional). A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
 
 ## Procedure
 
-1. **Rank with the script.** Run `scripts/triage_rank.py --in <file> --today <date>`; add `--band-pct N` only when the band is known from the context library. Order: overdue first, then due soonest, then larger value.
-2. **Confirm the route** for each row: non-standard quote to `deal-desk-review`; API or data access request to `api-access-request`; data licence to `data-license-pricing`; renewal to `deal-desk-review` with `account-price-fit`; standard quote from the price book with no review.
-3. **Anchor-deal accounts.** If the account has an anchor deal (see `deal-structures.md`), run `account-price-fit` before `deal-desk-review`. Do not review an add-on in isolation.
+1. **Rank with the script.** Run `scripts/triage_rank.py --in <file> --today <date>`; add `--band-pct N` only when the band is known from the context library. With no band, every request that asks for a discount goes to review (fail closed). The script overrides the request type when a discount is over the band, so a label cannot skip review. Order: overdue first, then due soonest, then larger value. Rows it cannot read are listed at the top; fix them and rerun.
+2. **Confirm the route** for each row. One owner per question: `api-access-request` owns any new or expanded API access; `data-license-pricing` owns a data licence, and pricing the right once the purpose is decided; `deal-desk-review` shapes a non-standard quote or renewal; rights questions go to `rights-handoff`. A standard quote from the price book needs no review only when it asks for no discount.
+3. **Anchor-deal accounts.** If the account has an anchor deal (see `deal-structures.md`), including a data licence for that account, run `account-price-fit` before `deal-desk-review` or `data-license-pricing`. Do not review an add-on in isolation. Review requests from the same account together.
 4. **Check the exception log.** Mark rows whose exception has expired or whose get has not arrived. List unrequited concessions with owner and date.
 5. **Name what blocks.** For each request, the missing input and who supplies it. A rights question goes to `rights-handoff`.
 6. **Do not approve.** The desk recommends; the approver named in `pricing-governance.md` decides. If it is Unknown, say so.
@@ -701,13 +701,13 @@ Not for: finding the prices (`data-price-setting`) or releasing the book (`price
 
 Context library files read: `pricing-governance.md` (margin floors, bands), `product-catalog.md`. If a file still says `status: template`, treat its values as Unknown.
 
-1. **Products and scope**: for each data or API product, what the customer receives and what they may do with it. If the scope is not known, price `internal_use` only and say so.
+1. **Products and scope**: for each data or API product, what the customer receives and what they may do with it. If the scope is not known, price `internal_use` only, set `right_basis` to `assumed` and say so.
 2. **Product attributes**: coverage, refresh frequency, history depth, delivery methods, volume, and number of current customers.
-3. **Cost data** if available: cost to produce, source fees owed to suppliers, cost to serve (delivery and support). Ask Finance for the margin floor per family.
+3. **Cost data** if available: cost to produce, source fees owed to suppliers, cost to serve (delivery and support). Take the margin floor per family from `pricing-governance.md` (on price, not on cost); Unknown if blank, so ask who sets it.
 4. **Existing prices**: past data deals, quotes, and renewals, with realized price, volume, term, and use.
 5. **Value evidence**: willingness-to-pay research, win and loss reasons, and customer value drivers (revenue enabled, cost avoided, time saved).
 6. **Benchmarks**: public price lists and published information only, with sources. Never use competitor information obtained directly from a competitor.
-7. **Goals and constraints**: penetration targets, strategic accounts, existing contract price protections.
+7. **Goals and constraints**: penetration targets and existing contract price protections. List prices are set without knowing any account; a strategic account's context moves a deal price only through the deal desk (`account-price-fit`), never the list (rule 13).
 
 If an input is missing, say what you cannot do without it and what you can do with assumptions that you label clearly.
 
@@ -715,7 +715,7 @@ If an input is missing, say what you cannot do without it and what you can do wi
 
 ### 1. Scope the price book
 
-List products and the right each line grants. For API products, decide which of the five uses the line sells (own live transactions, short retention, bulk analysis, rebuilding or reselling, AI) and whether any customer is already using the API for a broader purpose than the price covers.
+List products and the right each line grants. For API products, decide which right the line grants (own live transactions, short retention, bulk analysis, rebuilding or reselling, or an AI use; `references/api-access-scope.md` maps uses to the nine rights) and whether any customer is already using the API for a broader purpose than the price covers.
 
 ### 2. Choose the licensing units and structure
 
@@ -728,7 +728,7 @@ For a new product or a new granted right, run the `data-price-setting` skill fir
 Compute with code and show the inputs.
 
 - **Floor**: cost to produce and serve, plus any supplier fee, plus the margin floor.
-- **Reference**: realized prices from comparable past deals (median and range, by size band), and public benchmarks with sources.
+- **Reference**: realized prices from comparable past deals (median and range, by size band), shown with the discounts, credits and concessions that produced them, so that a concession is not read as a list price, and public benchmarks with sources.
 - **Value ceiling**: customer value drivers or willingness-to-pay results, expressed as a share of the value created.
 
 Set the list price inside the range between floor and ceiling, near the reference, and state the reasoning. Where evidence is thin, give a range and mark the line **hypothesis, to test**.
@@ -756,7 +756,7 @@ Run `scripts/check_price_book.py --pricebook <price-book.csv> [--mode release]` 
 - **Strategy mode (default).** A missing floor, or a data or API line with no stated right, is a warning. Use this while building.
 - **Release mode (`--mode release`).** Those two are errors. Run it before a price book goes out for quoting.
 
-The script also checks tier overlaps and gaps, unit price versus volume, volume cliffs, floor above list, duplicates, and that broader rights are not priced below internal use. Fix every error before presenting. Then backtest: re-quote the last 12 months of deals at the new list prices and show the difference against realized prices, by customer size.
+The script also checks tier overlaps and gaps, unit price versus volume, volume cliffs, floor above list, duplicates, and that broader rights are not priced below internal use. Fix every error before presenting. Then backtest: re-quote the deals in the backtest window from the review parameters in `pricing-governance.md` (ask if Unknown) at the new list prices and show the difference against realized prices, by customer size.
 
 ### 8. Prepare the decision
 
@@ -786,7 +786,7 @@ Before finishing, confirm each. They also bind every step above.
 - An API price covers the use it states. Collecting, keeping or reusing responses is a separate, higher-priced right.
 - Never invent costs, benchmarks, or past prices. Mark assumptions and hypotheses.
 - Benchmarks come from public or customer-supplied sources with citations; do not infer competitor prices from private conversations.
-- Prices are proposals. The Pricing Council approves the price book, and Finance confirms the margin floors.
+- Prices are proposals. The Pricing Council approves the price book and the margin floors, as `pricing-governance.md` sets out.
 - Whether we may grant a right is the product manager's check in the rights pack. If it says a right cannot be granted, remove the line.
 - Customer-specific past prices are used only to set the reference range; do not reproduce them in general outputs.
 
@@ -925,7 +925,7 @@ Header; the answer (releasable or not, and why); checker result; change log; not
 
 Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
 
-Turn a proposed price or packaging change into a decision package for the Pricing Council. The council decides; Legal confirms notice terms.
+Turn a proposed price or packaging change into a decision package for the Pricing Council. The council decides. Notice terms are read from the contracts, and the approver for contract questions is the one named in `pricing-governance.md` (Unknown if blank).
 
 ## When to use
 
@@ -951,7 +951,7 @@ Context library files read: `pricing-governance.md`, `deal-structures.md` (notic
 1. **Restate the change** in one table: before and after, by plan and unit.
 2. **Segment customers** by how the change affects them: unaffected, increase, decrease, and by size of change. Compute with code.
 3. **Check contracts.** Mark each customer: change can take effect at the proposed date, only at renewal, or only after notice. Show the earliest effective date per group and the share of revenue in each. Flag MFN or price-protection conflicts for Legal. Do not interpret contract language; quote the clause reference and escalate.
-4. **Model scenarios with code**: base, low, and high, varying volume response and churn by segment. Show revenue, margin if cost is supplied, and customers lost or downgraded, month by month for 12 months, with the assumptions in a table.
+4. **Model scenarios with code**: base, low, and high, varying volume response and churn by segment. Show revenue, margin if cost is supplied, and customers lost or downgraded, month by month over the horizon in the review parameters in `pricing-governance.md` (ask if Unknown), with the assumptions in a table.
 5. **Compute sensitivities**: which assumption moves the result most.
 6. **Build the notice calendar**: contract notice deadlines, internal approval dates, communication dates, effective dates.
 7. **Draft a risk register**: churn in key accounts, win-rate effect, partner or channel reaction, billing and system readiness, legal exposure, and perception risk. Give each a mitigation and owner role.
@@ -961,7 +961,7 @@ Context library files read: `pricing-governance.md`, `deal-structures.md` (notic
 
 1. **One-page council memo**: decision requested, change, rationale, scenario results in a small table, top three risks, recommendation, and the conditions for approval.
 2. **Scenario model summary** and **assumptions table**.
-3. **Impacted customer list** (top 25 by revenue plus counts by group).
+3. **Impacted customer list** (the largest accounts by revenue, list length from the review parameters in `pricing-governance.md`, plus counts by group).
 4. **Contract and notice summary** with items escalated to Legal.
 5. **Notice calendar**.
 6. **Risk register.**
@@ -1014,7 +1014,7 @@ If the price book version or deal log is missing, state which analyses you can a
 1. **Reconcile first.** Check totals against finance revenue if provided. Report row counts, nulls, duplicates, and unmatched products. Stop and report if the reconciliation gap exceeds the tolerance set in `pricing-governance.md` or by the user (ask if Unknown), since every later figure inherits it.
 2. **Rebuild list value** for each line from the price book version in force on the invoice date.
 3. **Build the waterfall with code**: list value, then approved discounts, then unapproved or unexplained discount, then credits and adjustments, then billing and metering gaps, to realized revenue. Report in USD and as a percent of list.
-4. **Cut it** by product family, segment, discount tier, customer (top 20), contract vintage, and sales owner if provided.
+4. **Cut it** by product family, segment, discount tier, customer (list length from the review parameters in `pricing-governance.md`; Unknown if blank), contract vintage, and sales owner if provided.
 5. **Classify leakage drivers**: approved discount beyond guardrail, discount with no recorded approval, expired promotions still applied, unbilled overage or usage, tier mismatch, credits and write-offs, price book errors, unit definition problems.
 6. **Size and rank** each driver by monthly and annualized value, and by recoverability (easy fix, needs customer conversation, needs contract change).
 7. **Recommend actions** per top driver: owner role, step, expected recovery range, and how it would be verified.
@@ -1024,7 +1024,7 @@ If the price book version or deal log is missing, state which analyses you can a
 1. **Headline**: realization rate for the period, change versus prior period if data allows, and the largest driver in one sentence.
 2. **Waterfall** (chart or table) with list, each step, and realized.
 3. **Top five leakage drivers** table: driver, value, share, recoverability, owner.
-4. **Customers and segments to review** (top 10), each with the reason.
+4. **Customers and segments to review** (the list length in the review parameters in `pricing-governance.md`), each with the reason.
 5. **Recovery plan**: actions in priority order.
 6. **Data quality notes**: reconciliation result, rows excluded and why.
 7. **Inputs and assumptions used.**
@@ -1037,8 +1037,8 @@ Before finishing, confirm each. They also bind every step above.
 - Compute everything with code. Show the script's key figures and where they come from.
 - Never present unreconciled data as final; label it provisional.
 - Separate approved discount (policy working as designed) from unexplained discount (a control gap). Do not treat all discount as leakage.
-- Do not name individual sales reps in broad summaries; give owners at role or team level unless the Analytics Lead asks for detail.
-- Hand the Analytics Lead the data checks to sign off before the results go beyond the desk.
+- Do not name individual sales reps in broad summaries; give owners at role or team level unless the data owner named in `systems-and-data.md` asks for detail (Unknown if blank).
+- Hand the data checks to the data owner named in `systems-and-data.md` (Unknown if blank) before the results go beyond the desk.
 
 ---
 
@@ -1292,7 +1292,7 @@ Ask one question at a time for what is missing. Say which sections are skipped f
 
 1. **Roll up with the script.** `scripts/weekly_roll.py --in <file> [--week YYYY-MM-DD]` gives the realization rate against the prior week, by family and by cause.
 2. **Read the gap.** Name the largest cause and the family with the largest change. Treat Unlabeled causes as a finding: someone must label them.
-3. **Usage fit.** For API keys, apply `api-usage-tier-fit` and, for a flagged pattern, the screen in `api-access-request`. Word every flag as "possible data collection, to confirm".
+3. **Usage fit.** For API keys, apply `api-usage-tier-fit` and, for a flagged pattern, the screen in `api-access-request`. Word every flag as "usage pattern to confirm with the account owner".
 4. **Exceptions.** Count new, expiring and unrequited concessions from the exception log.
 5. **Choose three actions**, each with an owner and a date. If an owner is not known, write Unknown and ask.
 6. **Route.** Rights questions to `rights-handoff`. Price changes to `price-change-proposal`. Large exceptions to `deal-desk-review`.
@@ -1376,5 +1376,5 @@ Confirm each before finishing.
 - All statistics computed with code, with sample sizes beside every figure.
 - No stated willingness to pay presented as a demand forecast.
 - No fabricated respondent data or benchmark. If no benchmark is supplied, none is cited.
-- The research analyst fields the study and approves the findings. No customer is contacted from this skill.
+- Whoever fields the study approves the findings; the approver is named in `pricing-governance.md` (Unknown if blank). No customer is contacted from this skill.
 - Respondent identities and customer-specific answers stay out of any summary.

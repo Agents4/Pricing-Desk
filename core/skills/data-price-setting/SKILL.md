@@ -32,9 +32,9 @@ Context library files read: `pricing-governance.md` (margin floor), `product-cat
 1. **Product**: what a buyer receives, delivery, refresh, history. For a data or API product, the right the customer is granted (`base_right`): what they may do with the data or responses, and for how long they may keep them.
 2. **Rights to price as options** (data and API products): the broader rights customers ask for, such as display to third parties, redistribution, keeping and building on responses, and each AI use. Each is its own line with its own value case.
 3. **Coverage**: the share of the market, volume or parties the product includes, the coverage the value estimates assume, and the coverage if it widens.
-4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and Finance's margin floor.
+4. **Cost**: fixed annual cost to produce and run, variable cost per unit, supplier royalties or revenue share (as a percent of price), cannibalization of existing products, and the margin floor from `pricing-governance.md` (a share of price; Unknown if blank).
 5. **Customers and value**: segments, how many, how much each would use, and what the product is worth to each per year. Record the source of each estimate: estimate, interview, pilot, or contract data.
-6. **Market**: comparable products with a public or customer-supplied price and a comparability score from 0 to 1.
+6. **Market**: comparable products with a public or customer-supplied price and a comparability score from 0 to 1. An analog from the library is scored 1 to 5; enter it as the score divided by 5 (3 of 5 is 0.6) and say so.
 7. **Willingness-to-pay points**: the highest price each interviewed buyer would pay, from a study or interviews.
 
 If an input is missing, say what you cannot do without it. Run the calculator with what exists and let it report low confidence. Do not invent values.
@@ -80,8 +80,8 @@ It returns the floor, the value-based price and cap, the market and willingness-
 ### 6. Read the result like a pricer
 
 - **Not viable** (floor above value cap): no price works. Offer options: cut cost or scope, aim at a higher-value segment or right, spread cost across products, or re-check the value estimate.
-- **Anchors differ by more than 1.5x**: find out why. Usually a wrong unit, a weak comp, or a value estimate that is too low or too high. Do not average away a disagreement.
-- **Segment value-based prices differ by more than 1.5x**: consider fenced segment prices, with fences customers accept (use case, customer type, rights) and that cannot be arbitraged.
+- **Anchors differ by more than the cutoff in `review.divergence_flag` (from the review parameters in `pricing-governance.md`; with no cutoff the tool shows the ratio and does not judge it)**: find out why. Usually a wrong unit, a weak comp, or a value estimate that is too low or too high. Do not average away a disagreement.
+- **Segment value-based prices differ by more than `review.segment_spread_flag`**: consider fenced segment prices, with fences customers accept (use case, customer type, rights) and that cannot be arbitraged.
 - **Priced at the floor or at the cap**: the evidence does not support the target. Say so.
 - **Low confidence**: present as provisional, a range to test, with the next evidence to collect.
 
@@ -117,5 +117,5 @@ Before finishing, confirm each. They also bind every step above.
 - Whether we may grant a right is the product manager's check in the rights pack. If the product manager tells you a right cannot be granted, drop that line; do not price around it.
 - Label invented, illustrative, or assumed inputs. A worked example is not a quote.
 - Do not present a price as certain when confidence is Low.
-- Prices are proposals. The Pricing Council approves them and Finance confirms margin floors.
+- Prices are proposals. The Pricing Council approves them and the margin floors.
 - Keep customer-specific data (individual willingness to pay, contract prices) out of general outputs.

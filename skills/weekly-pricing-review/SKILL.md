@@ -1,6 +1,6 @@
 ---
 name: weekly-pricing-review
-description: Produce the one-page weekly pricing review from billing lines, API usage and the exception log. Shows realization against list and last week, leakage by cause, plans where usage does not fit, harvest flags to confirm, and three actions with owners. Use when it is review day, when someone asks how pricing performed this week, or when realized price drops.
+description: Produce the one-page weekly pricing review from billing lines, API usage and the exception log. Shows realization against list and last week, leakage by cause, plans where usage does not fit, usage patterns to confirm, and three actions with owners. Use when it is review day, when someone asks how pricing performed this week, or when realized price drops.
 compatibility: "Any Agent Skills client. Scripts need Python 3.8+; without a shell the skill works from pasted figures and says the roll-up was not run."
 metadata:
   version: "1.0.0"
@@ -36,7 +36,7 @@ Ask one question at a time for what is missing. Say which sections are skipped f
 
 1. **Roll up with the script.** `scripts/weekly_roll.py --in <file> [--week YYYY-MM-DD]` gives the realization rate against the prior week, by family and by cause.
 2. **Read the gap.** Name the largest cause and the family with the largest change. Treat Unlabeled causes as a finding: someone must label them.
-3. **Usage fit.** For API keys, apply `api-usage-tier-fit` and, for a flagged pattern, the screen in `api-access-request`. Word every flag as "possible data collection, to confirm".
+3. **Usage fit.** For API keys, apply `api-usage-tier-fit` and, for a flagged pattern, the screen in `api-access-request`. Word every flag as "usage pattern to confirm with the account owner".
 4. **Exceptions.** Count new, expiring and unrequited concessions from the exception log.
 5. **Choose three actions**, each with an owner and a date. If an owner is not known, write Unknown and ask.
 6. **Route.** Rights questions to `rights-handoff`. Price changes to `price-change-proposal`. Large exceptions to `deal-desk-review`.

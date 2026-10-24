@@ -19,6 +19,14 @@ import sys
 from collections import OrderedDict
 
 SCOPE = {"data_license", "api_access"}
+OTHER_TYPES = {"software", "service", "other"}
+ALIASES = {"data": "data_license", "datalicense": "data_license", "data_licence": "data_license", "datalicence": "data_license",
+           "api": "api_access", "apiaccess": "api_access"}
+
+
+def norm_type(s):
+    k = (s or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return ALIASES.get(k, ALIASES.get(k.replace("_", ""), k))
 
 
 def main():
@@ -29,10 +37,16 @@ def main():
     ap.add_argument("--md")
     a = ap.parse_args()
     items = OrderedDict()
-    missing_right = []
+    missing_right, unknown_type, n_lines, n_other = [], [], 0, 0
     with open(a.pricebook, newline="", encoding="utf-8-sig") as fh:
         for r in csv.DictReader(fh):
-            if (r.get("product_type") or "").strip() not in SCOPE:
+            n_lines += 1
+            ptype = norm_type(r.get("product_type"))
+            if ptype in OTHER_TYPES:
+                n_other += 1
+                continue
+            if ptype not in SCOPE:
+                unknown_type.append(r.get("line_id", "") or r.get("product_id", ""))
                 continue
             pid = (r.get("product_id") or "").strip()
             cr = (r.get("conferred_right") or r.get("use_right") or "").strip()
@@ -67,6 +81,10 @@ def main():
     out = ["Rights hand-off: %d product and right pair(s); %d open, %d with an answer on file." % (len(rows), open_n, len(rows) - open_n), "",
            "| # | Product | Name | Right granted | Lines | Annual revenue | Customers | Answer | Date | By |", "|---|---|---|---|---|---|---|---|---|---|"]
     out += ["| " + " | ".join(str(x) for x in r) + " |" for r in rows]
+    out += ["", "Lines read: %d. Data or API: %d. Software, service or other (not listed): %d. Product type missing or not recognised: %d." % (
+        n_lines, n_lines - n_other - len(unknown_type), n_other, len(unknown_type))]
+    if unknown_type:
+        out += ["", "Lines whose product_type is blank or not recognised cannot be classed as data, API or other, so they are NOT in the list above. Fix the type and rerun: " + ", ".join(str(x) for x in unknown_type)]
     if missing_right:
         out += ["", "Data or API lines with no conferred_right (cannot be listed until the granted right is stated): " + ", ".join(missing_right)]
     out += ["", "Answers are shown as the product manager wrote them. The pricing desk does not assess rights held."]

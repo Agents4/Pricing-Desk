@@ -17,21 +17,33 @@ def run(*args):
 class TestHarvestScreen(unittest.TestCase):
     csv = os.path.join(SK, "api-access-request", "examples", "keys.csv")
     script = os.path.join(SK, "api-access-request", "scripts", "harvest_screen.py")
+    med = ["--segment-median", "TMC=120", "--segment-median", "OTA=150"]
 
-    def test_no_multiple_flags_nothing(self):
-        r = run(self.script, "--in", self.csv, "--segment-median-l2b", "100")
+    def test_no_thresholds_flags_nothing(self):
+        r = run(self.script, "--in", self.csv, *self.med)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn("Unknown (nothing flagged)", r.stdout)
+        self.assertIn("no threshold given: ratios shown, nothing judged", r.stdout)
+        self.assertNotIn("pattern to confirm", r.stdout)
+        self.assertIn("Unknown (not run)", r.stdout)
+
+    def test_signals_flag_pattern(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--multiple", "3", "--distinct-ratio", "0.8")
+        self.assertIn("pattern to confirm with the account owner", r.stdout)
         self.assertNotIn("possible data collection", r.stdout)
-        self.assertIn("threshold Unknown", r.stdout)
 
-    def test_multiple_flags_high_ratio(self):
-        r = run(self.script, "--in", self.csv, "--segment-median-l2b", "20", "--multiple", "5")
-        self.assertIn("possible data collection, to confirm", r.stdout)
+    def test_zero_bookings_flagged_with_multiple(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--multiple", "5")
+        self.assertIn("searches with no bookings", r.stdout)
 
-    def test_zero_bookings_listed(self):
-        r = run(self.script, "--in", self.csv, "--segment-median-l2b", "100", "--multiple", "5")
-        self.assertIn("ratio undefined", r.stdout)
+    def test_customer_rollup_present(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--distinct-ratio", "0.8")
+        self.assertIn("By customer", r.stdout)
+        self.assertIn("| Fern Labs (invented) | 2 |", r.stdout)
+
+    def test_missing_median_stops(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("no default", r.stderr)
 
 
 class TestTriage(unittest.TestCase):
@@ -115,8 +127,8 @@ class TestRelease(unittest.TestCase):
     def test_calendar(self):
         r = run(self.cal, "--in", os.path.join(self.base, "examples", "contracts.csv"), "--effective", "2027-01-01", "--today", "2026-10-24")
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertIn("send-by date passed 21 day(s) ago", r.stdout)
-        self.assertIn("protected until 2027-06-30", r.stdout)
+        self.assertIn("passed 21 day(s) ago", r.stdout)
+        self.assertIn("protected through 2027-06-30", r.stdout)
         self.assertIn("notice period Unknown", r.stdout)
 
 
@@ -177,13 +189,14 @@ class TestResearchScripts(unittest.TestCase):
     def test_valuation_skips_without_rate(self):
         s = os.path.join(SK, "data-product-valuation")
         d = json.load(open(os.path.join(s, "examples", "input.json")))
-        del d["income"]["discount_rate"]
+        del d["income"]
         with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
             json.dump(d, f)
         try:
             r = run(os.path.join(s, "scripts", "valuation.py"), "--in", f.name)
         finally:
             os.unlink(f.name)
+        self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("Skipped: Income approach", r.stdout)
 
 

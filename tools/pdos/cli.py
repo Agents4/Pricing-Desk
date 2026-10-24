@@ -96,18 +96,34 @@ def cmd_release(args) -> int:
     return 0
 
 
+def _inside(path: str, base: str) -> bool:
+    path, base = os.path.realpath(path), os.path.realpath(base)
+    return path == base or path.startswith(base + os.sep)
+
+
 def cmd_notebook_pack(args) -> int:
-    from .notebook import build_account_pack, build_company_pack
+    from .notebook import build_account_pack, build_company_pack, valid_slug
     root = os.path.abspath(args.workspace) if args.workspace else (os.getcwd() if os.path.isdir(os.path.join(os.getcwd(), "workspace")) else repo_root())
     core = os.path.join(repo_root(), "core")
+    packs = os.path.join(root, "workspace", "outputs", "notebook-packs")
     if args.account:
-        out = args.out or os.path.join(root, "dist", "notebook-packs", "account-" + args.account)
-        written = build_account_pack(root, core, args.account, out)
+        if not valid_slug(args.account):
+            print("account %r is not a folder slug (lower-case letters, digits, dot, dash, underscore)" % args.account)
+            return 1
+        out = os.path.abspath(args.out) if args.out else os.path.join(packs, "account-" + args.account)
     elif args.company:
-        out = args.out or os.path.join(root, "dist", "notebook-packs", "company-playbook")
-        written = build_company_pack(root, core, out)
+        out = os.path.abspath(args.out) if args.out else os.path.join(packs, "company-playbook")
     else:
         print("choose --account <slug> or --company")
+        return 1
+    if not (_inside(out, os.path.join(root, "workspace", "outputs")) or _inside(out, os.path.join(root, "dist"))) or os.path.realpath(out) in (
+            os.path.realpath(os.path.join(root, "workspace", "outputs")), os.path.realpath(os.path.join(root, "dist"))):
+        print("--out must be a new folder inside workspace/outputs/ or dist/ (it may be cleared and rewritten): %s" % out)
+        return 1
+    try:
+        written = build_account_pack(root, core, args.account, out) if args.account else build_company_pack(root, core, out)
+    except SystemExit as e:
+        print(e)
         return 1
     print("wrote %d source file(s) to %s" % (len(written), out))
     for fn, w in written:

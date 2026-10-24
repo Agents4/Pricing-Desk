@@ -19,7 +19,36 @@ META = ".pricing-desk-instance.json"
 JUNK = shutil.ignore_patterns("__pycache__", ".DS_Store", "*.pyc")
 
 
+def _same_or_nested(a: str, b: str) -> bool:
+    a, b = os.path.realpath(a), os.path.realpath(b)
+    return a == b or a.startswith(b + os.sep) or b.startswith(a + os.sep)
+
+
+def _is_product_root(path: str) -> bool:
+    return all(os.path.exists(os.path.join(path, x)) for x in ("core", "tools", "VERSION"))
+
+
+def _backup(dest: str) -> str:
+    """Copy every product folder and file an upgrade will overwrite into .upgrade-backups/<timestamp>/ (never overwrites an older backup)."""
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    bdir = os.path.join(dest, ".upgrade-backups", stamp)
+    n = 1
+    while os.path.exists(bdir):
+        n += 1
+        bdir = os.path.join(dest, ".upgrade-backups", "%s-%d" % (stamp, n))
+    os.makedirs(bdir)
+    for item in PRODUCT_DIRS + PRODUCT_FILES:
+        p = os.path.join(dest, item)
+        if os.path.isdir(p):
+            shutil.copytree(p, os.path.join(bdir, item), ignore=JUNK)
+        elif os.path.isfile(p):
+            shutil.copyfile(p, os.path.join(bdir, item))
+    return bdir
+
+
 def _copy_product(src: str, dest: str) -> None:
+    if _same_or_nested(src, dest):
+        raise ValueError("source and destination are the same folder or one contains the other: %s, %s" % (src, dest))
     for d in PRODUCT_DIRS:
         s = os.path.join(src, d)
         if os.path.isdir(s):
@@ -55,6 +84,12 @@ def _scaffold_workspace(src: str, dest: str, client: str) -> None:
 
 def new_instance(src: str, dest: str, client: str) -> int:
     dest = os.path.abspath(dest)
+    if not client.strip():
+        print("--client needs a company name")
+        return 1
+    if _same_or_nested(src, dest):
+        print("destination %s is inside the product folder (or contains it); choose a folder outside %s" % (dest, src))
+        return 1
     if os.path.exists(dest) and os.listdir(dest):
         print("destination %s exists and is not empty" % dest)
         return 1
@@ -76,14 +111,23 @@ def new_instance(src: str, dest: str, client: str) -> int:
 
 def upgrade_instance(src: str, dest: str) -> int:
     dest = os.path.abspath(dest)
+    if _same_or_nested(src, dest):
+        print("refusing: %s is the product folder itself (or contains or sits inside it). Upgrade an instance from a separate product checkout." % dest)
+        return 1
+    if not _is_product_root(src):
+        print("refusing: %s does not look like a Pricing Desk product folder (needs core/, tools/ and VERSION)" % src)
+        return 1
     meta_path = os.path.join(dest, META)
     if not os.path.isfile(meta_path):
         print("%s is not a Pricing Desk instance (no %s)" % (dest, META))
         return 1
-    meta = json.load(open(meta_path, "r", encoding="utf-8"))
-    agents = os.path.join(dest, "AGENTS.md")
-    if os.path.isfile(agents):
-        shutil.copyfile(agents, agents + ".bak-" + dt.date.today().isoformat())
+    try:
+        with open(meta_path, "r", encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except (OSError, ValueError) as e:
+        print("cannot read %s: %s" % (meta_path, e))
+        return 1
+    backup = _backup(dest)
     _copy_product(src, dest)
     _scaffold_workspace(src, dest, meta.get("client", "Company"))  # adds new scaffold files only
     old = meta.get("product_version")
@@ -92,7 +136,8 @@ def upgrade_instance(src: str, dest: str) -> int:
     with open(meta_path, "w", encoding="utf-8") as fh:
         json.dump(meta, fh, indent=2)
         fh.write("\n")
-    print("upgraded %s: %s -> %s (workspace/ and local/ untouched; old AGENTS.md saved as .bak)" % (dest, old, meta["product_version"]))
+    print("upgraded %s: %s -> %s (workspace/ and local/ untouched). Everything replaced was first copied to %s" % (dest, old, meta["product_version"], backup))
+    print("If you edited core/, AGENTS.md, CLAUDE.md or README.md in the instance, compare with the backup. Company-only changes belong in local/ and workspace/, which an upgrade never touches.")
     return build(dest, targets=ALL_TARGETS)
 
 

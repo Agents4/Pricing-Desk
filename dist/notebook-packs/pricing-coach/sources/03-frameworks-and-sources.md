@@ -19,8 +19,8 @@ Fidelity tags follow the Sales-OS ledger idea: C canonical (the framework as its
 | RAPID decision roles | Council decision rights | C | Bain and Company; page not fetched | to verify |
 | Data valuation: cost, market and income approaches | Data product pricing (stage 3, 5) | C | Doug Laney, Infonomics (book 2017, per secondary reports); HPCwire 2016 coverage | partly verified |
 | Look-to-book ratio as cost and value signal | API tier fit, harvest test | V | AltexSoft summary of OAG, PhocusWire and others: about 5:1 in the green-screen era, hundreds to thousands in the internet era, tens of thousands in parts of the market; agentic-traffic projections are a third-party claim | secondary |
-| Usage-priced API with free tier and rate limits | API plan design | V | Reddit API 2023 (Nordic APIs): 0.24 USD per 1,000 calls above the free tier; free tier 100 queries per minute with OAuth, 10 without; announced 18 April 2023, effective mid-2023 | verified (one article) |
-| Pay per crawl / HTTP 402 per-request pricing for machine access | Pricing machine and AI access | V | Cloudflare pay per crawl as reported by TechRadar, 2 July 2025; private beta at that date | verified (one article) |
+| Usage-priced API with free tier and rate limits | API plan design | V | Reddit API 2023, as reported by TechTarget (fetched 2026-10-24; see the `reddit-api-2023` analog): 0.24 USD per 1,000 requests above the free tier; free tier under 100 queries per minute with OAuth, under 10 without; effective 1 July 2023. An earlier draft cited Nordic APIs (announcement date 18 April 2023); that page was not re-fetched, so the announcement date is to verify | verified (one article) |
+| Pay per crawl / HTTP 402 per-request pricing for machine access | Pricing machine and AI access | V | Cloudflare pay per crawl as reported by Engadget (fetched 2026-10-24; see the `cloudflare-pay-per-crawl-2025` analog); Cloudflare's own post could not be fetched. An earlier draft cited TechRadar (2 July 2025); that page was not re-fetched in this build | verified (one article) |
 | Fences and rate fences in revenue management | Packaging, discount design | C | Talluri and van Ryzin, "The Theory and Practice of Revenue Management" (edition to verify) | to verify |
 | Strategy and tactics of pricing | Price setting, value-based pricing | C | Nagle, Hogan and Zale (edition to verify) | to verify |
 | Price management | Price management process | C | Simon and Fassnacht (edition to verify) | to verify |
@@ -32,3 +32,6 @@ Verified items only: Reddit 2023 API pricing; Cloudflare pay per crawl; look-to-
 
 ## Rule for using this table
 Skills cite a framework only if its status is verified or partly verified, and they say which part is canonical and which is our adaptation (tag X). Anything marked "to verify" is cited as "reported, to verify" until checked.
+
+## Numbers that had no source
+An earlier version of the price calculator carried defaults with no source: 5 and 15 willingness-to-pay points, 1.5x and 2x divergence cutoffs, a 15 percent discount, a 0.5 value cap, a 0.3 capture share per right, a 1.5 coverage cap and 0.4/0.3/0.3 blend weights. They were removed. The company sets each one in `pricing-governance.md` (review parameters) or supplies it with the input, and the tool stops or switches the check off when it is blank. Do not reintroduce a default without a source.

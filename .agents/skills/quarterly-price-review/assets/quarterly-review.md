@@ -5,7 +5,7 @@
 Status: Draft      Handling: Internal      Date: [YYYY-MM-DD]
 
 ## Line review
-| Line / family | Value evidence | Market evidence | Realization (3 months) | Win-loss | Granted right stated | Recommend |
+| Line / family | Value evidence | Market evidence | Realization (window per governance) | Win-loss | Granted right stated | Recommend |
 |---|---|---|---|---|---|---|
 | | | | | | yes / no | change / hold / retire |
 
@@ -24,4 +24,7 @@ Entries added, re-checked, retired:
 - [ ]
 
 ## Handoff
-Done: / Not done: / You decide: / Watch:
+Done:
+Not done:
+You decide:
+Watch:

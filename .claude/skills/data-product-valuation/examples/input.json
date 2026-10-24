@@ -1,4 +1,35 @@
-{"currency": "USD",
- "cost": {"build_cost": 1200000, "annual_run_cost": 300000, "years": 3},
- "market": {"comparables": [{"name": "Comparable A (invented)", "price": 900000, "source": "invented"}, {"name": "Comparable B (invented)", "price": 1500000, "source": "invented"}, {"name": "Comparable C (invented)", "price": 1100000, "source": "invented"}]},
- "income": {"annual_net_benefit": 600000, "years": 3, "discount_rate": 0.10}}
+{
+ "currency": "USD",
+ "cost": {
+  "build_cost": 1200000,
+  "annual_run_cost": 300000,
+  "years": 3
+ },
+ "market": {
+  "comparables": [
+   {
+    "name": "Comparable A (invented)",
+    "price": 900000,
+    "source": "invented",
+    "unit": "per market-year"
+   },
+   {
+    "name": "Comparable B (invented)",
+    "price": 1500000,
+    "source": "invented",
+    "unit": "per market-year"
+   },
+   {
+    "name": "Comparable C (invented)",
+    "price": 1100000,
+    "source": "invented",
+    "unit": "per market-year"
+   }
+  ]
+ },
+ "income": {
+  "annual_net_benefit": 600000,
+  "years": 3,
+  "discount_rate": 0.1
+ }
+}

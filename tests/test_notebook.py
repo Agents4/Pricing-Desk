@@ -31,7 +31,7 @@ class TestNotebook(unittest.TestCase):
             self.assertIn("deal desk", r.stdout)
             r = subprocess.run([sys.executable, os.path.join(inst, "tools", "pdos.py"), "notebook-pack", "--account", "atlas"], capture_output=True, text=True, cwd=inst)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-            readme = open(os.path.join(inst, "dist", "notebook-packs", "account-atlas", "README.md")).read()
+            readme = open(os.path.join(inst, "workspace", "outputs", "notebook-packs", "account-atlas", "README.md")).read()
             self.assertIn("CONFIDENTIAL", readme)
 
     def test_missing_account_fails(self):

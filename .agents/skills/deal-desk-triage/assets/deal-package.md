@@ -1,8 +1,8 @@
 # Deal package: [Request ID] / [Account]
 
-Status: Draft
-Decision and owner: [approve, counter or decline; named approver]
-Handling: Internal. Not for the customer.
+**Answer:** [approve, counter or decline, in one line]
+**Decision and owner:** [approve, counter or decline] / [approver per pricing-governance.md, or Unknown]
+Status: Draft      Handling: Internal (not for the customer)      Date: [YYYY-MM-DD]
 
 ## Request
 | Item | Value |
@@ -29,4 +29,7 @@ Handled by: [skill]   Approval route: [rule tripped, or Unknown]
 - Legal: 
 
 ## Handoff
-Done: / Not done: / You decide: / Watch:
+Done:
+Not done:
+You decide:
+Watch:

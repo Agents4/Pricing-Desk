@@ -27,7 +27,10 @@ Status: For decision      Handling: Internal      Date: [YYYY-MM-DD]
 - [ ]
 
 ## Handoff
-Done: / Not done: / You decide: / Watch:
+Done:
+Not done:
+You decide:
+Watch:
 
 ---
 ## Decision log entry (append to workspace/outputs/decision-log.md after the meeting, by a person)

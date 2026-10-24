@@ -1,8 +1,8 @@
 # Account price sheet: [Account] / [Add-on product]
 
-Status: Draft
-Decision and owner: [what is to be decided, who decides]
-Handling: Internal. Not for the customer.
+**Answer:** [the recommended option for this account in one line, or the decision needed]
+**Decision and owner:** [what is to be decided] / [approver per pricing-governance.md, or Unknown]
+Status: Draft      Handling: Internal (not for the customer)      Date: [YYYY-MM-DD]
 
 ## 1. Roles
 - Anchor: [the main deal, term, renewal date]
@@ -49,4 +49,7 @@ Recommend: [ ]   Approvals needed: [from the approval matrix, or Unknown]
 - [ ]
 
 ## Handoff
-Done: / Not done: / You decide: / Watch:
+Done:
+Not done:
+You decide:
+Watch:

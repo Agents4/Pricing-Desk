@@ -1,3 +1,7 @@
+---
+type: record
+name: exception-log
+---
 # Exception log
 
 Every concession outside the standard price book or outside the band is one row. A row is never deleted; an expired row is marked closed.

@@ -39,7 +39,7 @@ If the price book version or deal log is missing, state which analyses you can a
 1. **Reconcile first.** Check totals against finance revenue if provided. Report row counts, nulls, duplicates, and unmatched products. Stop and report if the reconciliation gap exceeds the tolerance set in `pricing-governance.md` or by the user (ask if Unknown), since every later figure inherits it.
 2. **Rebuild list value** for each line from the price book version in force on the invoice date.
 3. **Build the waterfall with code**: list value, then approved discounts, then unapproved or unexplained discount, then credits and adjustments, then billing and metering gaps, to realized revenue. Report in USD and as a percent of list.
-4. **Cut it** by product family, segment, discount tier, customer (top 20), contract vintage, and sales owner if provided.
+4. **Cut it** by product family, segment, discount tier, customer (list length from the review parameters in `pricing-governance.md`; Unknown if blank), contract vintage, and sales owner if provided.
 5. **Classify leakage drivers**: approved discount beyond guardrail, discount with no recorded approval, expired promotions still applied, unbilled overage or usage, tier mismatch, credits and write-offs, price book errors, unit definition problems.
 6. **Size and rank** each driver by monthly and annualized value, and by recoverability (easy fix, needs customer conversation, needs contract change).
 7. **Recommend actions** per top driver: owner role, step, expected recovery range, and how it would be verified.
@@ -49,7 +49,7 @@ If the price book version or deal log is missing, state which analyses you can a
 1. **Headline**: realization rate for the period, change versus prior period if data allows, and the largest driver in one sentence.
 2. **Waterfall** (chart or table) with list, each step, and realized.
 3. **Top five leakage drivers** table: driver, value, share, recoverability, owner.
-4. **Customers and segments to review** (top 10), each with the reason.
+4. **Customers and segments to review** (the list length in the review parameters in `pricing-governance.md`), each with the reason.
 5. **Recovery plan**: actions in priority order.
 6. **Data quality notes**: reconciliation result, rows excluded and why.
 7. **Inputs and assumptions used.**
@@ -62,5 +62,5 @@ Before finishing, confirm each. They also bind every step above.
 - Compute everything with code. Show the script's key figures and where they come from.
 - Never present unreconciled data as final; label it provisional.
 - Separate approved discount (policy working as designed) from unexplained discount (a control gap). Do not treat all discount as leakage.
-- Do not name individual sales reps in broad summaries; give owners at role or team level unless the Analytics Lead asks for detail.
-- Hand the Analytics Lead the data checks to sign off before the results go beyond the desk.
+- Do not name individual sales reps in broad summaries; give owners at role or team level unless the data owner named in `systems-and-data.md` asks for detail (Unknown if blank).
+- Hand the data checks to the data owner named in `systems-and-data.md` (Unknown if blank) before the results go beyond the desk.

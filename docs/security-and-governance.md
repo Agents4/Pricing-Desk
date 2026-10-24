@@ -6,12 +6,14 @@ Prices, floors, discount bands, incentives, customer volumes, usage by key, supp
 
 ## Controls in the product
 
-- **Recommend only.** No skill approves, publishes or sends. Status is Draft or For decision; the Council logs Decided. A guard hook blocks edits that set a price book line to Approved; the Council overrides with `PRICING_DESK_COUNCIL=1`. The hook is a guardrail against model mistakes, not a security control.
+- **Recommend only.** No skill approves, publishes or sends. Status is Draft or For decision; the Council logs Decided. A guard hook (Gemini CLI and Claude Code) blocks a write to a pricing artifact (anything under `workspace/` or `outputs/`, and price book, Council, decision log, exception log, approval or account price files) that adds a "Status: Approved" marker. Edits to the product's own source folders are not guarded. The Council overrides with `PRICING_DESK_COUNCIL=1`. The hook is a guardrail against model mistakes, not a security control: a person with a shell can bypass it. The build writes the Claude Code hook settings to `.claude/settings.json` (marked as generated).
 - **Confidentiality.** Every output carries a Handling label (Internal or Shareable). Customer-specific prices are not copied into general summaries.
 - **Public sources only** for outside research, with URL and access date. No logins, no contact with competitors, no customer data in queries.
-- **Flags are questions.** API usage screens say "possible data collection, to confirm". They never allege misuse.
+- **Flags are questions.** API usage screens say "usage pattern to confirm with the account owner". They never allege misuse or assume intent.
 - **Rights.** The desk states the right a price grants and hands the question on; it never says whether a right is held.
-- **Protected paths.** Upgrades never touch `workspace/` or `local/`.
+- **Protected paths.** Upgrades never touch `workspace/` or `local/`. `upgrade-instance` refuses to run on the product repo itself, and keeps a copy of what it replaces in `.upgrade-backups/` (git-ignored).
+- **Notebook packs.** `build` regenerates only the coach pack (`dist/notebook-packs/pricing-coach`), which holds no company data and leaves out local skills. Company and account packs are written by `notebook-pack` to `workspace/outputs/notebook-packs` by default (`--out` must be a folder inside `workspace/outputs/` or `dist/`), which `build` never clears. The tool refuses to write into a non-empty folder it did not create.
+- **Shared closing check.** Every skill ships `references/output-check.md` (from `core/rubrics/output-check.md`) so the closing check works where there is no shell.
 
 ## Controls the company must set
 

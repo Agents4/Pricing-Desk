@@ -37,20 +37,20 @@ If call classes are not defined in the data, ask for the mapping before analyzin
 ## Procedure
 
 1. **Validate the data.** Check coverage by day, missing customers, duplicate rows, and unit consistency. Report gaps.
-2. **Profile usage with code** per customer: monthly volume by call class, trend (3 and 6 month), peak versus average, look-to-book ratio (search or price calls per booking), and share of calls throttled or erroring.
+2. **Profile usage with code** per customer: monthly volume by call class, trend over the windows in the review parameters in `pricing-governance.md` (Unknown if blank: ask), peak versus average, look-to-book ratio (search or price calls per booking), and share of calls throttled or erroring.
 3. **Tier fit.** Compare actual and projected volume with the plan: utilization of commit, overage incurred, and what the bill would be on each tier at the same usage. Mark each customer: right-sized, under-using (downgrade or churn risk), over-using (upsell or overage exposure), or unusual.
 4. **Look-to-book check.** Flag customers whose ratio is far above their segment median; these consume capacity without conversion and may need a ratio-based fee or rate-limit change.
 5. **Agent-traffic flags.** Identify patterns that look automated or agent-driven: very high call rates, flat hourly distribution, repeated near-identical queries, large bursts. Mark them as "possible machine traffic, to confirm" and never as fact.
-6. **Harvest check.** For each customer, compute: distinct-query ratio (distinct origin, destination and date combinations over total search calls), look-to-book against the segment median, calls per key against bookings, coverage of the market swept, and the share of calls with no booking behind them. Read `../price-book-builder/references/api-access-scope.md`. Flag customers whose pattern looks like collecting data rather than serving bookings as "possible data collection, to confirm". Never call it misuse. A flagged customer is buying the booking right and using a data right. Options for the account owner: price the use as a data licence with a minimum commitment, add a look-to-book or distinct-query fence with an overage rate, set a retention term, or move them to a data product. Rate limits alone are not a price.
+6. **Harvest check.** For each customer, compute: distinct-query ratio (distinct origin, destination and date combinations over total search calls), look-to-book against the segment median, calls per key against bookings, coverage of the market swept, and the share of calls with no booking behind them. Read `../price-book-builder/references/api-access-scope.md`. Use `../api-access-request/scripts/harvest_screen.py` (it rolls keys up by customer and needs the company values from the review parameters). Where the pattern differs from the segment, record it as "usage pattern to confirm with the account owner" and follow `../api-access-request/references/harvest-handling.md`. A pattern is a question, not a finding: do not call it misuse and do not assume intent. If the customer confirms a wider use than the booking right, the price needs to cover it. Options for the account owner: price the use as a data licence with a minimum commitment, add a look-to-book or distinct-query fence with an overage rate, set a retention term, or move them to a data product. Rate limits alone are not a price.
 7. **Renewal pricing view.** For customers renewing within the renewal review window set in `pricing-governance.md` (ask if it is Unknown), show current spend, usage-implied spend, suggested tier, and the range of price actions that keep the customer on a fair value metric.
-8. **Metering questions.** List unit definitions that caused ambiguity in the analysis, for the Pricing Operations Manager.
+8. **Metering questions.** List unit definitions that caused ambiguity in the analysis, for the metering owner named in `systems-and-data.md` (Unknown if blank).
 
 ## Output
 
 1. **Headline findings** (three to five bullets, each with a number).
 2. **Tier-fit summary table**: counts and revenue by status (right-sized, under-using, over-using, unusual).
-3. **Top 15 action list**: customer, finding, suggested action, owner role, contract end date.
-4. **Look-to-book outliers**, **possible machine traffic** and **possible data collection** tables (with the figures behind each flag).
+3. **Action list** (length from the review parameters in `pricing-governance.md`; Unknown if blank, so ask): customer, finding, suggested action, owner role, contract end date.
+4. **Look-to-book outliers**, **possible machine traffic** and **usage-pattern** tables (with the figures behind each flag).
 5. **Renewal pipeline view**.
 6. **Metering and data questions.**
 7. **Inputs and assumptions used.**
