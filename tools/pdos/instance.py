@@ -87,6 +87,9 @@ def new_instance(src: str, dest: str, client: str) -> int:
     if not client.strip():
         print("--client needs a company name")
         return 1
+    if any(ord(ch) < 32 for ch in client) or any(ch in client for ch in '"\\`{}'):
+        print("--client must be a plain company name: no quotes, backslashes, braces, backticks or control characters")
+        return 1
     if _same_or_nested(src, dest):
         print("destination %s is inside the product folder (or contains it); choose a folder outside %s" % (dest, src))
         return 1

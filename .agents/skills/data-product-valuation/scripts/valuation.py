@@ -33,6 +33,8 @@ def isyears(v):
 
 def validate(d):
     errs = []
+    if not isinstance(d, dict) or not isinstance(d.get("currency"), str) or not d["currency"].strip():
+        errs.append("missing currency (no default is assumed)")
     if not isinstance(d, dict):
         return ["the input must be a JSON object"]
     c, m, i = d.get("cost") or {}, (d.get("market") or {}), d.get("income") or {}
@@ -96,7 +98,7 @@ def main():
         for e in errs:
             print(" -", e, file=sys.stderr)
         return 2
-    cur = d.get("currency", "USD")
+    cur = d["currency"]
     res, skipped = {}, []
     c = d.get("cost") or {}
     if "build_cost" in c:

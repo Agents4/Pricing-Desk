@@ -55,6 +55,7 @@ Exit code 1 if any error.
 import argparse
 import csv
 import math
+import re
 import sys
 from collections import defaultdict
 
@@ -75,11 +76,18 @@ def blank(v):
     return v is None or str(v).strip() == "" or str(v).strip().lower() in ("unknown", "tbd", "n/a")
 
 
+THOUSANDS = re.compile(r"^-?\d{1,3}(,\d{3})+(\.\d+)?$")
+
+
 def num(value, line, field, issues):
     if value is None or str(value).strip() == "":
         return None
+    s = str(value).strip()
+    if "," in s and not THOUSANDS.match(s):
+        issues.append(("E", line, f"{field} {value!r} has a comma that is not a thousands separator (a decimal comma?); write it with a point"))
+        return None
     try:
-        x = float(str(value).replace(",", ""))
+        x = float(s.replace(",", ""))
     except ValueError:
         issues.append(("E", line, f"{field} is not a number: {value!r}"))
         return None
@@ -95,6 +103,21 @@ def fmt(x):
 
 def get(row, key):
     return (row.get(key) or "").strip()
+
+
+def normalize(row):
+    """Spelling must not change meaning: Resell_Everything, USD and usd, Search and search, 12 and 12.0 are the same."""
+    for k in ("conferred_right", "use_right", "product_type", "tier_model", "delivery", "unit", "right_basis", "status"):
+        if isinstance(row.get(k), str):
+            row[k] = " ".join(row[k].split()).lower()
+    if isinstance(row.get("currency"), str):
+        row["currency"] = row["currency"].strip().upper()
+    tm = row.get("term_months")
+    if isinstance(tm, str):
+        try:
+            row["term_months"] = "%g" % float(tm.strip()) if tm.strip() else ""
+        except ValueError:
+            pass
 
 
 def main():
@@ -126,9 +149,16 @@ def main():
     seen, parsed, no_scope, seen_ids = set(), [], [], set()
     if not lines:
         issues.append(("E" if release else "W", "price book", "the price book has no lines"))
-    for row in lines:
+    for n, row in enumerate(lines, 2):
         lid = get(row, "line_id") or "(no line_id)"
+        if None in row:
+            issues.append(("E", lid, f"file line {n} has more cells than the header ({len(row[None])} extra); an unquoted comma shifts every later column"))
+        if any(v is None for k, v in row.items() if k is not None):
+            issues.append(("E", lid, f"file line {n} has fewer cells than the header"))
+        normalize(row)
         pid = get(row, "product_id")
+        if pid == "":
+            issues.append(("E", lid, "product_id is blank; tiers and rights cannot be grouped"))
         cr = get(row, "conferred_right") or get(row, "use_right")
         ptype_raw = get(row, "product_type")
         ptype = ptype_raw or ("data_license" if get(row, "dataset_id") else "other")
@@ -163,10 +193,13 @@ def main():
         if ptype in SCOPE_TYPES and not cr:
             no_scope.append(lid)
         if cr and cr not in RIGHTS:
-            issues.append(("W", lid, f"conferred_right {cr!r} is not one of the nine rights: {', '.join(RIGHTS)}"))
+            issues.append(("E" if release or ptype in SCOPE_TYPES else "W", lid, f"conferred_right {cr!r} is not one of the nine rights: {', '.join(RIGHTS)}"))
         basis = get(row, "right_basis").lower()
         if cr and basis in ("inferred", "assumed"):
             issues.append(("E" if release else "W", lid, f"conferred_right {cr} is {basis}, not stated. Confirm it from the contract or product definition and set right_basis to stated"))
+        model = get(row, "tier_model")
+        if model and model not in ("all_units", "graduated"):
+            issues.append(("E" if release else "W", lid, f"tier_model {model!r} is not all_units or graduated; the volume-cliff check cannot be applied"))
         if cr in KEEPING_RIGHTS and ptype in SCOPE_TYPES:
             miss_terms = [f for f in TERM_FIELDS if blank(row.get(f))]
             if miss_terms:
@@ -209,8 +242,10 @@ def main():
             if a["lp"] is not None and b["lp"] is not None:
                 if b["lp"] > a["lp"]:
                     issues.append(("E", f"{a['lid']} / {b['lid']}", f"unit price rises with volume ({a['lp']} to {b['lp']})"))
-                model = get(b["row"], "tier_model") or "all_units"
-                if model == "all_units" and a["tmax"] is not None:
+                model = get(b["row"], "tier_model")
+                if not model:
+                    issues.append(("E" if release else "W", f"{a['lid']} / {b['lid']}", "tier_model is blank on a multi-tier product: how the tiers bill is Unknown. Checked below as all_units, the stricter reading"))
+                if model in ("", "all_units") and a["tmax"] is not None:
                     total_a, total_b = a["tmax"] * a["lp"], b["tmin"] * b["lp"]
                     if total_b < total_a:
                         issues.append(("E", f"{a['lid']} / {b['lid']}", f"volume cliff: {fmt(b['tmin'])} units costs {total_b:,.2f} but {fmt(a['tmax'])} units costs {total_a:,.2f}"))

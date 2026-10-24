@@ -13,7 +13,7 @@ Every output starts with:
 # <Title>
 **Answer:** <the answer or the decision needed, one or two lines>
 **Decision and owner:** <the decision this serves> / <who decides>
-Status: Draft | For decision | Decided      Handling: Internal | Shareable      Date: <YYYY-MM-DD>
+Status: Draft | For decision               Handling: Internal | Shareable      Date: <YYYY-MM-DD>
 ```
 
 ## Where files go

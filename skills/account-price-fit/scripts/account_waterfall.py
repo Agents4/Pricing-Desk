@@ -68,6 +68,8 @@ def validate(inp):
             errs.append(f"{path}.{key} must be above {above}")
 
     num("input", inp, "term_months", above=0)
+    if not isinstance(inp.get("currency"), str) or not inp["currency"].strip():
+        errs.append("missing currency (no default is assumed)")
     for k in ("annual_revenue", "annual_incentives_paid", "annual_cost_to_serve"):
         num("anchor", inp.get("anchor"), k, lo=0)
     num("anchor", inp.get("anchor"), "annual_list_value", lo=0, required=False)
@@ -75,6 +77,8 @@ def validate(inp):
     if not isinstance(p, dict):
         errs.append("missing addon")
         p = {}
+    if p.get("product_type") not in ("data_license", "api_access", "software", "service", "other"):
+        errs.append("addon.product_type is required: data_license, api_access, software, service or other (it decides whether a granted right must be stated)")
     num("addon", p, "list_price", above=0)
     num("addon", p, "annual_units", lo=0)
     num("addon", p, "floor_price", lo=0, required=False)
@@ -134,7 +138,7 @@ def norm_gets(raw):
 
 
 def evaluate(inp):
-    cur = inp.get("currency", "USD")
+    cur = inp["currency"]
     term = float(inp["term_months"])
     n_years = int(math.ceil(term / 12.0 - EPS))
     fracs = [min(12.0, term - 12.0 * y) / 12.0 for y in range(n_years)]
@@ -153,7 +157,7 @@ def evaluate(inp):
     basis = dict(anchor="A (source not stated)", addon="A (source not stated)", options="A (source not stated)")
     basis.update(inp.get("inputs_basis") or {})
     issues = []
-    ptype = p.get("product_type", "other")
+    ptype = p["product_type"]
     right = p.get("granted_right", "")
     if ptype in SCOPE_TYPES and not right:
         issues.append("add-on is a data or API product with no granted_right: say what the customer may do (rule 8)")
@@ -181,12 +185,17 @@ def evaluate(inp):
         inc_chg = float(o.get("incentive_change_annual", 0.0))
         rev_chg = float(o.get("anchor_revenue_change_annual", 0.0))
         ramp = o.get("ramp") or [1.0]
+        extra_flags = []
+        if len(ramp) > n_years:
+            extra_flags.append(f"ramp has {len(ramp)} entries but the term has {n_years} year(s): the extra entries are ignored")
         ramp = (list(ramp) + [ramp[-1]] * n_years)[:n_years]
         pb = o.get("price_by_year")
+        if pb and len(pb) > n_years:
+            extra_flags.append(f"price_by_year has {len(pb)} entries but the term has {n_years} year(s): the extra entries are ignored")
         prices = (list(pb) + [pb[-1]] * n_years)[:n_years] if pb else [float(o["price"])] * n_years
         gets = norm_gets(o.get("gets"))
         yearly = []
-        flags = []
+        flags = list(extra_flags)
         route_parts = []
         for y in range(n_years):
             f = fracs[y]
@@ -238,15 +247,27 @@ def evaluate(inp):
             flags.append(f"valued gets over the term ({money(valued, cur)}) are below the revenue given up against list ({money(given, cur)})")
         if inc_chg == 0.0 and "incentive_change_annual" not in o:
             flags.append("incentive change not stated: the account net assumes the add-on does not change incentives paid (A)")
-        # account-level discount cap
+        # a concession can also travel through the anchor: more incentive paid, or less anchor revenue
+        anchor_give = (inc_chg - rev_chg) * term_years
+        if anchor_give > EPS:
+            flags.append(f"concession through the anchor deal: {money(anchor_give, cur)} over the term (more incentive paid or less anchor revenue). The add-on discount band does not cover it")
+            route_parts.append("anchor_concession")
+            if not gets:
+                flags.append("an anchor concession with no get: log it as an unrequited concession")
+        # account-level discount cap. Existing incentives are the baseline; only a CHANGE in incentives or anchor revenue counts here.
         acct_disc = None
-        if cap is not None and a.get("annual_list_value") not in (None, ""):
-            acct_list = float(a["annual_list_value"]) * term_years + tot_list
-            acct_real = (float(a["annual_revenue"]) + rev_chg) * term_years + tot_rev
-            acct_disc = (1.0 - acct_real / acct_list) * 100.0 if acct_list else None
-            if acct_disc is not None and acct_disc > float(cap) + EPS:
-                flags.append(f"total account discount {acct_disc:.1f}% exceeds the account cap {float(cap):g}%: escalate")
-                route_parts.append("over_cap")
+        if cap is not None:
+            if a.get("annual_list_value") in (None, ""):
+                if (term_disc is not None and term_disc > EPS) or anchor_give > EPS:
+                    flags.append("the account discount cap is set but anchor.annual_list_value is missing, so the cap cannot be checked: escalate")
+                    route_parts.append("cap_unchecked")
+            else:
+                acct_list = float(a["annual_list_value"]) * term_years + tot_list
+                acct_real = (float(a["annual_revenue"]) + rev_chg - inc_chg) * term_years + tot_rev
+                acct_disc = (1.0 - acct_real / acct_list) * 100.0 if acct_list else None
+                if acct_disc is not None and acct_disc > float(cap) + EPS:
+                    flags.append(f"total account discount {acct_disc:.1f}% (counting any change in incentives) exceeds the account cap {float(cap):g}%: escalate")
+                    route_parts.append("over_cap")
         nets = [y["account_net"] for y in yearly]
         incs = [y["incremental_vs_decline"] for y in yearly]
         if "exception" in route_parts:
@@ -255,10 +276,21 @@ def evaluate(inp):
             route = "ESCALATE: no band on file -> " + (path if path else "escalation path Unknown")
         elif "over_band" in route_parts or "over_cap" in route_parts:
             route = "ESCALATE: outside the band or account cap"
+        elif "cap_unchecked" in route_parts:
+            route = "ESCALATE: the account cap cannot be checked (anchor.annual_list_value missing) -> " + (path if path else "escalation path Unknown")
+        elif "anchor_concession" in route_parts:
+            route = "ESCALATE: concession through the anchor deal (outside the add-on band) -> " + (path if path else "escalation path Unknown")
         elif term_disc is not None and term_disc > EPS:
-            route = "INSIDE BAND: as a give tied to a get; approver per pricing-governance.md"
+            if valued <= EPS:
+                route = "INSIDE BAND, NO VALUED GET: put a value on a get before this is approved as a trade; approver per pricing-governance.md"
+            elif valued + EPS < given:
+                route = "INSIDE BAND, GETS BELOW THE GIVE: strengthen the get or escalate; approver per pricing-governance.md"
+            else:
+                route = "INSIDE BAND: a give tied to a get; approver per pricing-governance.md"
         else:
             route = "AT OR ABOVE LIST"
+        if cap is None and route.startswith("INSIDE BAND"):
+            route += " (account cap Unknown: not checked)"
         results.append({
             "name": o["name"], "included_units": incl, "credits_annual": credits, "ramp": ramp, "prices": prices,
             "gets": gets, "years": yearly, "route": route,

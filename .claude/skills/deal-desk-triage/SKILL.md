@@ -25,7 +25,7 @@ Not for: reviewing one deal in depth (`deal-desk-review`), a data licence (`data
 
 ## Inputs
 
-A list of open requests: id, account, product, request type, total contract value, requested discount, received and due dates, and whether the account has an anchor deal (`anchor_deal`, optional). A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
+A list of open requests: id, account, product, request type, total contract value, requested discount (write 0 for none; a blank is Unknown, not zero), received and due dates, and whether the account has an anchor deal (`anchor_deal`, optional). A CSV is best (see `examples/requests.csv`). Read `pricing-governance.md` for the discount band the desk may approve alone; if it is a template, the band is Unknown. Read the exception log in `workspace/` if one exists.
 
 ## Procedure
 

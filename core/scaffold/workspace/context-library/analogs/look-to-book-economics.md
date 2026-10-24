@@ -7,7 +7,7 @@ access_date: "2026-10-24"
 source_kind: secondary (travel technology vendor blog citing OAG and industry voices)
 unit: shopping requests per booking
 metric: look-to-book ratio
-right_or_use: not a price; a cost and abuse signal for shopping APIs
+right_or_use: not a price; a cost signal for shopping APIs, and a usage pattern to confirm with the account owner
 comparability: "5 of 5 for the metric; it is our own industry"
 status: seed
 ---

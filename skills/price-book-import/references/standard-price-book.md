@@ -20,7 +20,7 @@ One row per price line (one tier of one product, unit and term). CSV with a head
 | list_price | yes | Price per unit in this tier |
 | floor_price | release | Lowest price the desk may accept. Blank is a warning in strategy mode and an error in release mode |
 | currency, term_months | yes | |
-| tier_model | no | all_units (the tier price applies to all units) or graduated. Default all_units |
+| tier_model | no | all_units (the tier price applies to all units) or graduated. No default: blank is Unknown, and the checker warns on a multi-tier product (error in release mode) |
 | status | no | Existing, Draft, Proposed. Only the Pricing Council sets Approved |
 | version | no | Price book version label |
 | annual_revenue, customers | no | Used to rank the hand-off list. Keep on the first tier of a product to avoid double counting |

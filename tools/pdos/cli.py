@@ -116,9 +116,9 @@ def cmd_notebook_pack(args) -> int:
     else:
         print("choose --account <slug> or --company")
         return 1
-    if not (_inside(out, os.path.join(root, "workspace", "outputs")) or _inside(out, os.path.join(root, "dist"))) or os.path.realpath(out) in (
-            os.path.realpath(os.path.join(root, "workspace", "outputs")), os.path.realpath(os.path.join(root, "dist"))):
-        print("--out must be a new folder inside workspace/outputs/ or dist/ (it may be cleared and rewritten): %s" % out)
+    outputs = os.path.join(root, "workspace", "outputs")
+    if not _inside(out, outputs) or os.path.realpath(out) == os.path.realpath(outputs):
+        print("--out must be a new folder inside workspace/outputs/ (it may be cleared and rewritten). dist/ holds the shared coach pack and is not allowed: %s" % out)
         return 1
     try:
         written = build_account_pack(root, core, args.account, out) if args.account else build_company_pack(root, core, out)

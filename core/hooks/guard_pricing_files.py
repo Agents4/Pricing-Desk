@@ -7,11 +7,14 @@ Pricing Council approves, and the model recommends (operating rule 10). It works
   - Claude Code: Write, Edit, MultiEdit         (hook JSON: {"hook_event_name": "PreToolUse", "tool_name": ..., "tool_input": {"file_path", "content" | "old_string", "new_string" | "edits": [...]}})
 
 What it looks at: files under workspace/ or outputs/, and any file whose name looks like a price book, council pack,
-decision log, exception log or approval. It does not look at the product source (core/, docs/, tests/, tools/, evals/),
-so ordinary maintenance edits are not blocked. A change is blocked only when the file AFTER the edit holds more
-"status: Approved" markers than the file BEFORE it, so editing other lines of an already-approved record is allowed.
-Markers: a CSV or TSV column named status (any case) with the value Approved; a line "Status: Approved" (any case, bold or
-not); a JSON or YAML key status set to approved.
+decision log, exception log, approval or account price (a symlink is judged by where it points as well as its name). It does
+not look at the product source (core/, docs/, tests/, tools/, evals/), so ordinary maintenance edits are not blocked.
+A change is blocked when the edit ADDS a record whose status is Approved or Decided (Decided is the Council's log entry;
+skills draft and recommend, so they write Draft or For decision). Records are compared one by one, so approving one row
+while un-approving another is still blocked, and editing other text of an already-approved record is allowed.
+Markers: a CSV, TSV or other delimited column whose name contains status or approval, with a value that starts with
+Approved or Decided ("Approved by Council" counts); a line "Status: Approved" (any case, bold, dash, equals or Markdown table);
+a JSON or YAML status or approval key set to approved or decided (JSON is parsed, so escapes do not hide it).
 
 It is a guardrail against mistakes by the model, not a security control. It cannot see edits made through shell commands,
 notebooks, other tools, or a person editing a file. It does not make anything true: a document is Approved only when the
@@ -28,23 +31,41 @@ import json
 import os
 import re
 import sys
+from collections import Counter
 
 GUARDED_DIRS = ("workspace", "outputs")
 SOURCE_DIRS = ("core", "docs", "tests", "tools", "evals", "design", "adapters", "skills", "commands", "agents", "hooks",
                "dist", ".claude", ".agents", "copilot-guide")
 NAME_RE = re.compile(r"price[-_ ]?book|pricebook|council|decision[-_ ]?log|exception[-_ ]?log|approval|account[-_ ]?price", re.I)
-EXTS = (".csv", ".tsv", ".json", ".md", ".txt", ".yaml", ".yml")
-MD_RE = re.compile(r"^\s*[*_#>\-\s]*status\s*\**\s*[:=]\s*\**\s*approved\b", re.I | re.M)
-KEY_RE = re.compile(r"[\"']?status[\"']?\s*[:=]\s*[\"']?approved\b", re.I)
+EXTS = (".csv", ".tsv", ".json", ".md", ".markdown", ".txt", ".yaml", ".yml")
+# Statuses only the Council may record. "Decided" is the Council's log entry; the model drafts and recommends.
+WORD = r"(?:council[\s-]+)?(?:approved|decided)\b"
+MD_RE = re.compile(r"^[ \t]*[*_#>|\-\s]*(?:approval[ \t]+)?status[ \t]*\**[ \t]*[:=|\-\u2013\u2014]+[ \t|]*\**[ \t]*" + WORD, re.I | re.M)
+KEY_RE = re.compile(r"[\"']?(?:approval[_ ]?)?status[\"']?\s*[:=]\s*[\"']?" + WORD, re.I)
+VALUE_RE = re.compile(r"^\W*" + WORD, re.I)   # a status cell that starts with Approved or Decided ("Approved by Council", "Approved.")
+STATUS_COL_RE = re.compile(r"status|approval", re.I)
 
 
-def is_guarded(path):
-    if not path:
-        return False
+def _candidates(path):
+    """The path as given and where it really points, so a symlink with an innocent name cannot hide a pricing file."""
+    out = [path]
+    try:
+        real = os.path.realpath(path)
+        if real != os.path.abspath(path):
+            out.append(real)
+    except OSError:
+        pass
+    return out
+
+
+def _is_guarded_one(path):
     p = path.replace("\\", "/").lower()
-    if not p.endswith(EXTS):
-        return False
     parts = [x for x in p.split("/") if x]
+    if not parts:
+        return False
+    ext = os.path.splitext(parts[-1])[1]
+    if ext and not p.endswith(EXTS):
+        return False
     if any(d in parts[:-1] for d in GUARDED_DIRS):
         return True
     # The repo's own source and generated folders are not artifacts (works for absolute paths too).
@@ -53,25 +74,66 @@ def is_guarded(path):
     return bool(NAME_RE.search(parts[-1]))
 
 
-def count_approved(path, text):
+def is_guarded(path):
+    if not path:
+        return False
+    return any(_is_guarded_one(c) for c in _candidates(path))
+
+
+def _csv_markers(text):
+    """One marker per row whose status-like cell is Approved or Decided: (first cell, column). Any delimiter."""
+    try:
+        sample = text[:4096]
+        delim = max(",;\t|", key=sample.count) if any(d in sample for d in ",;\t|") else ","
+        found = []
+        for r in csv.DictReader(io.StringIO(text), delimiter=delim):
+            cells = list(r.items())
+            ident = (cells[0][1] or "").strip().lower() if cells else ""
+            for k, v in cells:
+                if k and STATUS_COL_RE.search(k) and isinstance(v, str) and VALUE_RE.match(v.strip()):
+                    found.append("row:%s:%s" % (ident, k.strip().lower()))
+        return found
+    except Exception:
+        return []
+
+
+def _json_markers(text):
+    found = []
+
+    def walk(o, trail):
+        if isinstance(o, dict):
+            for k, v in o.items():
+                if isinstance(v, str) and STATUS_COL_RE.search(str(k)) and VALUE_RE.match(v.strip()):
+                    found.append("key:%s/%s" % ("/".join(trail), k))
+                walk(v, trail + [str(k)])
+        elif isinstance(o, list):
+            for i, v in enumerate(o):
+                walk(v, trail + [str(i)])
+    try:
+        walk(json.loads(text), [])
+    except Exception:
+        return None
+    return found
+
+
+def markers(path, text):
+    """The Approved/Decided records in a file, as comparable strings."""
     if not text:
-        return 0
+        return []
     low = path.lower()
-    n = 0
     if low.endswith((".csv", ".tsv")):
-        try:
-            delim = "\t" if low.endswith(".tsv") else ","
-            for r in csv.DictReader(io.StringIO(text), delimiter=delim):
-                for k, v in r.items():
-                    if k and k.strip().lower() == "status" and isinstance(v, str) and v.strip().lower() == "approved":
-                        n += 1
-        except Exception:
-            pass
-        return n
-    n += len(MD_RE.findall(text))
+        return _csv_markers(text)
+    out = ["line:" + m.group(0).strip().lower() for m in MD_RE.finditer(text)]
     if low.endswith((".json", ".yaml", ".yml")):
-        n += len(KEY_RE.findall(text))
-    return n
+        js = _json_markers(text) if low.endswith(".json") else None
+        out += js if js is not None else ["key:" + m.group(0).lower() for m in KEY_RE.finditer(text)]
+    return out
+
+
+def added_markers(path, before, after):
+    b = Counter(markers(path, before))
+    a = Counter(markers(path, after))
+    return list((a - b).elements())
 
 
 def read(path):
@@ -134,13 +196,15 @@ def decide(data):
     before, after = proposed(data.get("tool_name"), tool_input, path)
     if after is None:
         return None
-    if count_approved(path, after) > count_approved(path, before):
-        return "Blocked: only the Pricing Council sets a status to Approved. Use Draft, Proposed or For decision."
+    if any(added_markers(c, before, after) for c in _candidates(path)):
+        return "Blocked: only the Pricing Council sets a status to Approved or Decided. Use Draft, Proposed or For decision."
     return None
 
 
 def respond(data, reason):
-    claude = "hook_event_name" in data or str(data.get("tool_name", "")) in ("Write", "Edit", "MultiEdit", "NotebookEdit")
+    # Claude Code names its event PreToolUse; Gemini CLI sends BeforeTool (and has its own deny shape).
+    claude = data.get("hook_event_name") == "PreToolUse" or (
+        "hook_event_name" not in data and str(data.get("tool_name", "")) in ("Write", "Edit", "MultiEdit", "NotebookEdit"))
     if reason is None:
         out = {"decision": "allow"}
         if claude:

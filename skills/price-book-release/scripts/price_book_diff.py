@@ -29,21 +29,35 @@ def load(p):
     if rows and "line_id" not in rows[0]:
         sys.exit("%s has no line_id column" % p)
     out = {}
-    for r in rows:
+    blank = []
+    for n, r in enumerate(rows, 2):
+        if "use_right" in r and "conferred_right" not in r:
+            r["conferred_right"] = r["use_right"]   # legacy column name, same meaning
         k = (r.get("line_id") or "").strip()
         if not k:
+            blank.append(n)
             continue
         if k in out:
             sys.exit("%s has a duplicated line_id %r; fix it before comparing" % (p, k))
         out[k] = r
+    if blank:
+        sys.exit("%s has blank line_id on file line(s) %s; a line without an id cannot be compared. Fix it first" % (p, ", ".join(map(str, blank[:10]))))
     return out
 
 
 def num(s):
     try:
-        return float((s or "").replace(",", "").strip())
+        x = float((s or "").replace(",", "").strip())
     except ValueError:
         return None
+    return x if x == x and abs(x) != float("inf") else None
+
+
+def same(fld, o, n):
+    """Spelling is not a change: Existing and existing, usd and USD."""
+    if fld in NUMERIC and num(o) is not None and num(n) is not None:
+        return num(o) == num(n)
+    return " ".join(o.split()).lower() == " ".join(n.split()).lower()
 
 
 def main():
@@ -61,13 +75,12 @@ def main():
             continue
         for fld in FIELDS:
             o, n = (old[k].get(fld) or "").strip(), (new[k].get(fld) or "").strip()
-            if fld in NUMERIC and num(o) is not None and num(n) is not None and num(o) == num(n):
+            if same(fld, o, n):
                 continue
-            if o != n:
-                pct = ""
-                if fld in ("list_price", "floor_price") and num(o) and num(n) is not None:
-                    pct = "%+.1f%%" % ((num(n) - num(o)) / num(o) * 100)
-                changes.append((k, new[k].get("product_id", ""), fld, o or "(blank)", n or "(blank)", pct))
+            pct = ""
+            if fld in ("list_price", "floor_price") and num(o) and num(n) is not None:
+                pct = "%+.1f%%" % ((num(n) - num(o)) / num(o) * 100)
+            changes.append((k, new[k].get("product_id", ""), fld, o or "(blank)", n or "(blank)", pct))
     out = ["Price book change log: %d line(s) added, %d removed, %d field change(s) on %d line(s)." % (
         len(added), len(removed), len(changes), len({c[0] for c in changes})), ""]
     if changes:

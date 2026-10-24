@@ -92,6 +92,41 @@ def money(v):
     return float(m.group(1)) * {"": 1, "k": 1e3, "m": 1e6, "b": 1e9}[(m.group(2) or "").lower()]
 
 
+CCY_WORDS = {"usd": "USD", "us$": "USD", "eur": "EUR", "gbp": "GBP", "cad": "CAD", "aud": "AUD", "chf": "CHF", "jpy": "JPY",
+             "inr": "INR", "cny": "CNY", "sgd": "SGD", "aed": "AED", "€": "EUR", "£": "GBP", "¥": "JPY"}
+RIGHTS = ["internal_use", "internal_analytics_shared_outputs", "display_to_third_parties", "redistribution_resale",
+          "derivative_data_product", "ai_training", "ai_fine_tuning", "ai_retrieval_grounding", "ai_evaluation"]
+PRODUCT_TYPES = ("data_license", "api_access", "software", "service", "other")
+TYPE_WORDS = {"data license": "data_license", "data licence": "data_license", "data_licence": "data_license", "datalicense": "data_license",
+              "api": "api_access", "api access": "api_access", "software": "software", "service": "service", "services": "service",
+              "other": "other"}
+RIGHT_WORDS = {"internal use only": "internal_use", "internal use": "internal_use", "internal": "internal_use",
+               "resale": "redistribution_resale", "redistribution": "redistribution_resale", "display": "display_to_third_parties"}
+
+
+def cell_currency(v):
+    """The currency a price cell names ('EUR 5.00', '€4.00'), or None. A bare $ names no currency."""
+    s = "" if v is None else str(v).lower()
+    for w, code in CCY_WORDS.items():
+        if (w.isalpha() and re.search(r"\b%s\b" % w, s)) or (not w.isalpha() and w in s):
+            return code
+    return None
+
+
+def canon_type(v):
+    s = " ".join(str(v or "").replace("_", " ").lower().split())
+    if s.replace(" ", "_") in PRODUCT_TYPES:
+        return s.replace(" ", "_")
+    return TYPE_WORDS.get(s)
+
+
+def canon_right(v):
+    s = " ".join(str(v or "").replace("_", " ").lower().split())
+    if s.replace(" ", "_") in RIGHTS:
+        return s.replace(" ", "_")
+    return RIGHT_WORDS.get(s)
+
+
 def bad_money(v):
     """True when a non-blank cell could not be read as a number (so the caller can report it)."""
     s = "" if v is None else str(v).strip()
@@ -262,15 +297,20 @@ def main():
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--sheet")
     ap.add_argument("--map")
-    ap.add_argument("--default-currency", default="USD")
+    ap.add_argument("--default-currency", help="Currency to use where the file names none. No default: without it the currency stays blank and the checker stops on it.")
     ap.add_argument("--version", default="legacy")
-    ap.add_argument("--tier-model", choices=["all_units", "graduated"], default="all_units",
-                    help="How the tiers bill. all_units: the tier price applies to every unit. graduated: each tier prices only its own units.")
+    ap.add_argument("--tier-model", choices=["all_units", "graduated"],
+                    help="How the tiers bill. all_units: the tier price applies to every unit. graduated: each tier prices only its own units. No default: without it tier_model stays blank and the checker warns on multi-tier products.")
     args = ap.parse_args()
 
     user_map = json.load(open(args.map)) if args.map else {}
     forced_types = user_map.get("types", {})
     forced_rights = user_map.get("rights", {})
+    for label, forced, canon in (("types", forced_types, canon_type), ("rights", forced_rights, canon_right)):
+        for k, v in forced.items():
+            if canon(v) is None:
+                sys.exit(f"--map {label}[{k!r}] = {v!r} is not one of the allowed values")
+            forced[k] = canon(v)
     raw = read_rows(args.inp, args.sheet)
     if not raw:
         sys.exit("The input file is empty.")
@@ -324,20 +364,40 @@ def main():
             tmin = 1.0 if not tmin else tmin
         tm, ok = term_months(rec.get("term_months"))
         if tm is None:
-            tm = 12
             if rec.get("term_months"):
-                issues.append(f"Row {ri} ({rec['product_id']}): term {rec['term_months']!r} not understood; used 12")
+                issues.append(f"Row {ri} ({rec['product_id']}): term {rec['term_months']!r} not understood; term_months left blank")
             else:
-                issues.append(f"Row {ri} ({rec['product_id']}): term not stated; used 12 months (assumption)")
+                issues.append(f"Row {ri} ({rec['product_id']}): term not stated; term_months left blank (Unknown, not assumed)")
+            tm = ""
+        ccy_col = (rec.get("currency") or "").strip().upper()
+        ccy_cells = {c for c in (cell_currency(rec.get("list_price")), cell_currency(rec.get("floor_price"))) if c}
+        if len(ccy_cells) > 1:
+            issues.append(f"Row {ri} ({rec['product_id']}): list and floor price name different currencies {sorted(ccy_cells)}; currency left blank")
+            ccy = ""
+        elif ccy_cells:
+            ccy = next(iter(ccy_cells))
+            if ccy_col and ccy_col != ccy:
+                issues.append(f"Row {ri} ({rec['product_id']}): the price cell says {ccy} but the currency column says {ccy_col}; used {ccy}")
+        else:
+            ccy = ccy_col or (args.default_currency or "").upper()
+            if not ccy:
+                issues.append(f"Row {ri} ({rec['product_id']}): no currency in the file and no --default-currency; currency left blank")
         rev = money(rec.get("annual_revenue"))
         cust = money(rec.get("customers"))
         name = rec.get("product_name") or rec.get("product_id")
+        given_type = canon_type(rec.get("product_type"))
+        if rec.get("product_type") and given_type is None:
+            issues.append(f"Row {ri} ({rec['product_id']}): type {rec['product_type']!r} is not data_license, api_access, software, service or other; worked out from the product words instead")
         ptype, conf, why = classify(name, rec.get("product_family"), rec.get("description"), rec.get("unit"),
-                                    forced_types.get(name) or forced_types.get(rec.get("product_id")) or rec.get("product_type") or None)
-        if rec.get("product_type") and rec["product_type"] in ("data_license", "api_access", "software", "service", "other"):
-            ptype, conf, why = rec["product_type"], "high", "given in the file"
+                                    forced_types.get(name) or forced_types.get(rec.get("product_id")) or given_type or None)
+        if given_type and not (forced_types.get(name) or forced_types.get(rec.get("product_id"))):
+            ptype, conf, why = given_type, "high", "given in the file"
         scoped = ptype in SCOPE_TYPES
-        use_right = forced_rights.get(name) or forced_rights.get(rec.get("product_id")) or rec.get("conferred_right", "")
+        use_right = forced_rights.get(name) or forced_rights.get(rec.get("product_id")) or ""
+        if not use_right and rec.get("conferred_right"):
+            use_right = canon_right(rec["conferred_right"]) or ""
+            if not use_right:
+                issues.append(f"Row {ri} ({rec['product_id']}): {rec['conferred_right']!r} is not one of the nine rights; granted right left blank (not stated)")
         ur_inferred = False
         right_basis = "stated" if use_right else ""
         if not use_right and scoped:
@@ -351,8 +411,8 @@ def main():
             product_family=rec.get("product_family", ""), conferred_right=use_right, right_basis=right_basis,
             delivery=rec.get("delivery", ""), unit=rec.get("unit", ""),
             tier_min=int(tmin) if tmin is not None else "", tier_max=int(tmax) if tmax is not None else "",
-            list_price=lp, floor_price="" if fp is None else fp, currency=rec.get("currency") or args.default_currency,
-            term_months=tm, tier_model=args.tier_model, status="Existing", version=args.version,
+            list_price=lp, floor_price="" if fp is None else fp, currency=ccy,
+            term_months=tm, tier_model=args.tier_model or "", status="Existing", version=args.version,
             annual_revenue="" if rev is None else rev, customers="" if cust is None else int(cust),
             price_period="", source_row=ri,
             notes="; ".join(x for x in [f"type {ptype} ({conf}: {why})" if conf != "high" else "",
@@ -379,16 +439,20 @@ def main():
         sys.exit("No price lines were read.")
 
     # revenue is a product total repeated on tier rows: keep it on the first tier only to avoid double counting
-    seen_rev = set()
+    first_rev = {}
     for o in out:
         k = (o["product_id"], o["unit"], o["term_months"])
-        if o["annual_revenue"] != "" and k in seen_rev:
+        if o["annual_revenue"] == "":
+            continue
+        if k not in first_rev:
+            first_rev[k] = (o["annual_revenue"], o["customers"])
+        elif (o["annual_revenue"], o["customers"]) == first_rev[k]:
             o["annual_revenue"] = ""
             o["customers"] = ""
-        elif o["annual_revenue"] != "":
-            seen_rev.add(k)
-    if any(o["annual_revenue"] != "" for o in out):
-        assumptions.append("Annual revenue and customer counts repeat on every tier row in the source; they are kept on the first tier of each product and unit so they are not double counted.")
+        else:
+            issues.append(f"{o['product_name']} ({o['unit']}): revenue differs between tier rows; kept on each row as per-tier revenue. If it is really a product total, the rights hand-off overstates it")
+    if first_rev:
+        assumptions.append("Where annual revenue and customer counts are identical on every tier row of a product they are taken as a product total and kept on the first tier only (so they are not double counted). If the source meant them per tier, the hand-off ranking understates them.")
 
     od = Path(args.out_dir)
     od.mkdir(parents=True, exist_ok=True)
@@ -449,8 +513,11 @@ def main():
     L.append("\n## Assumptions\n")
     for a in assumptions + [
         "All imported lines have status Existing (current prices in force). Nothing is Approved or Proposed.",
-        f"tier_model is set to {args.tier_model} for every line; confirm how the tiers actually bill (re-run with --tier-model graduated if each tier prices only its own units).",
-        f"Currency defaults to {args.default_currency} where the source has no currency column. Price period (monthly or annual) is not detected: check the unit text.",
+        (f"tier_model is set to {args.tier_model} for every line; confirm how the tiers actually bill." if args.tier_model
+         else "tier_model is blank: how the tiers bill (every unit at the tier price, or each tier its own units) is Unknown. Re-run with --tier-model once known."),
+        (f"Currency {args.default_currency.upper()} was used only where the source named none." if args.default_currency
+         else "No --default-currency was given: lines whose file names no currency have a blank currency."),
+        "Price period (monthly or annual) is not detected: check the unit text.",
         "The price book records the rights we grant the customer. Whether we hold the rights to grant them is assessed by the product manager with the rights pack; the pricing desk assumes we do. Give product_rights_handoff.csv to the product manager."]:
         L.append(f"- {a}")
     L.append("\n## Next steps\n")

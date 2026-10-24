@@ -9,7 +9,7 @@ requests.csv columns (header row required):
   anchor_deal                                                                                optional: yes if the account has an anchor deal
   request_type: non_standard_quote, api_data_request, data_licence, renewal, standard
   received and due are YYYY-MM-DD. tcv is total contract value in one currency. due may be blank.
-  requested_discount_pct may be written 15 or 15%.
+  requested_discount_pct may be written 15 or 15%. Write 0 for no discount: a blank is Unknown, not zero.
 
 --band-pct is the discount band the deal desk may approve alone, from pricing-governance.md. Leave it out when the
 band is Unknown: then EVERY request that asks for a discount goes to review (fail closed). No default is assumed.
@@ -110,7 +110,9 @@ def main():
                 rtype = "non_standard_quote"
             anchor = cell(r, "anchor_deal").lower() in ("yes", "y", "true", "1")
             asks = disc is not None and disc > 0
-            if a.band_pct is None:
+            if disc is None:
+                band = "Unknown: discount not stated"
+            elif a.band_pct is None:
                 band = "Unknown: escalate" if asks else "n/a (no discount asked)"
             elif not asks:
                 band = "n/a (no discount asked)"
@@ -118,7 +120,15 @@ def main():
                 band = "within band" if disc <= a.band_pct else "exceeds band"
             skill = ROUTE[rtype]
             note = ""
-            if asks and band != "within band" and rtype in ("standard", "data_licence", "renewal"):
+            if disc is None:
+                note = "discount not stated: ask the requester (0 if none) before this is quoted or approved"
+                if rtype == "standard":
+                    skill = "ask the requester to state the discount (0 if none); not quoted"
+                problems.append(f"line {i} ({rid}): requested_discount_pct is blank; treated as Unknown, not zero")
+            elif asks and band != "within band" and rtype == "data_licence":
+                skill = "data-license-pricing (price the right), then deal-desk-review for the discount"
+                note = f"data licence with a discount {'over the band' if a.band_pct is not None else 'and no band on file'}"
+            elif asks and band != "within band" and rtype in ("standard", "data_licence", "renewal"):
                 skill = "deal-desk-review"
                 note = f"{rtype} with a discount {'over the band' if a.band_pct is not None else 'and no band on file'}: reviewed, not quoted"
             elif asks and band == "within band" and rtype == "standard":

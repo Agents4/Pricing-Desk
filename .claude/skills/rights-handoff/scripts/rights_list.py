@@ -15,10 +15,13 @@ The pricing desk does not assess whether we hold a right. This list is a questio
 """
 import argparse
 import csv
+import math
 import sys
 from collections import OrderedDict
 
 SCOPE = {"data_license", "api_access"}
+RIGHTS = {"internal_use", "internal_analytics_shared_outputs", "display_to_third_parties", "redistribution_resale",
+          "derivative_data_product", "ai_training", "ai_fine_tuning", "ai_retrieval_grounding", "ai_evaluation"}
 OTHER_TYPES = {"software", "service", "other"}
 ALIASES = {"data": "data_license", "datalicense": "data_license", "data_licence": "data_license", "datalicence": "data_license",
            "api": "api_access", "apiaccess": "api_access"}
@@ -37,7 +40,7 @@ def main():
     ap.add_argument("--md")
     a = ap.parse_args()
     items = OrderedDict()
-    missing_right, unknown_type, n_lines, n_other = [], [], 0, 0
+    missing_right, unknown_type, bad_right, bad_number, n_lines, n_other = [], [], [], [], 0, 0
     with open(a.pricebook, newline="", encoding="utf-8-sig") as fh:
         for r in csv.DictReader(fh):
             n_lines += 1
@@ -49,17 +52,24 @@ def main():
                 unknown_type.append(r.get("line_id", "") or r.get("product_id", ""))
                 continue
             pid = (r.get("product_id") or "").strip()
-            cr = (r.get("conferred_right") or r.get("use_right") or "").strip()
+            cr = " ".join((r.get("conferred_right") or r.get("use_right") or "").replace("_", " ").lower().split()).replace(" ", "_")
             if not cr:
                 missing_right.append(r.get("line_id", pid))
+                continue
+            if cr not in RIGHTS:
+                bad_right.append("%s (%s)" % (r.get("line_id", pid), cr))
                 continue
             it = items.setdefault((pid, cr), {"name": r.get("product_name", ""), "lines": 0, "rev": 0.0, "cust": 0})
             it["lines"] += 1
             for k, f in (("rev", "annual_revenue"), ("cust", "customers")):
+                raw = (r.get(f) or "").replace(",", "").strip()
                 try:
-                    it[k] += float((r.get(f) or "").replace(",", "") or 0)
+                    x = float(raw) if raw else 0.0
+                    if not math.isfinite(x) or x < 0:
+                        raise ValueError
+                    it[k] += x
                 except ValueError:
-                    pass
+                    bad_number.append("%s %s=%r" % (r.get("line_id", pid), f, raw))
     answers = {}
     if a.answers:
         with open(a.answers, newline="", encoding="utf-8-sig") as fh:
@@ -87,6 +97,12 @@ def main():
         out += ["", "Lines whose product_type is blank or not recognised cannot be classed as data, API or other, so they are NOT in the list above. Fix the type and rerun: " + ", ".join(str(x) for x in unknown_type)]
     if missing_right:
         out += ["", "Data or API lines with no conferred_right (cannot be listed until the granted right is stated): " + ", ".join(missing_right)]
+    if bad_right:
+        out += ["", "Data or API lines whose conferred_right is not one of the nine rights (NOT in the list above; fix and rerun): " + ", ".join(bad_right)]
+    if bad_number:
+        out += ["", "Revenue or customer cells that are not usable numbers (counted as zero, so the ranking may understate them): " + ", ".join(bad_number)]
+    if any(it["lines"] > 1 for it in items.values()):
+        out += ["", "Revenue and customers are summed over the lines of a product and right. If your price book repeats a product total on every tier row, they are overstated: keep them on the first tier only."]
     out += ["", "Answers are shown as the product manager wrote them. The pricing desk does not assess rights held."]
     text = "\n".join(out) + "\n"
     sys.stdout.write(text)

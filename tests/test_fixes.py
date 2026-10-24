@@ -98,6 +98,55 @@ class TestPriceBookChecker(TmpCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("assumed", r.stdout)
 
+    def test_spelling_cannot_hide_a_bad_right_or_a_cliff(self):
+        r = self.check(lambda rs: rs[0].update(conferred_right="Resell_Everything"), mode="release")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("not one of the nine rights", r.stdout)
+        # a recognised right in another case is read as that right, so its keeping terms are still demanded
+        r = self.check(lambda rs: rs[1].update(conferred_right="Redistribution_Resale", minimum_commitment="", retention_term="", audit_right=""), mode="release")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("minimum_commitment", r.stdout)
+
+    def test_tier_model_typo_and_case_variants(self):
+        def cliff(rs, model):
+            base = dict(rs[0])
+            a, b = dict(base), dict(base)
+            a.update(line_id="T1", tier_min="1", tier_max="1000", list_price="500", floor_price="400", tier_model=model)
+            b.update(line_id="T2", tier_min="1001", tier_max="", list_price="499", floor_price="400", tier_model=model)
+            del rs[:]
+            rs.extend([a, b])
+        r = self.check(lambda rs: cliff(rs, "All_Units"))
+        self.assertIn("volume cliff", r.stdout)
+        r = self.check(lambda rs: cliff(rs, "gradutaed"))
+        self.assertIn("tier_model", r.stdout)
+
+    def test_key_variants_do_not_hide_duplicates(self):
+        def dup(rs):
+            rs[1].update({k: rs[0][k] for k in ("product_id", "conferred_right", "delivery", "tier_min", "tier_max")})
+            rs[1].update(unit=rs[0]["unit"].upper(), currency=rs[0]["currency"].lower(), term_months=rs[0]["term_months"] + ".0")
+        r = self.check(dup)
+        self.assertIn("duplicate line", r.stdout)
+
+    def test_blank_product_id_and_shifted_columns(self):
+        r = self.check(lambda rs: rs[0].update(product_id=""))
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("product_id is blank", r.stdout)
+        p = self.path("shift.csv")
+        with open(self.EXAMPLE) as fh:
+            lines = fh.read().splitlines()
+        lines[1] = lines[1].replace("Air Shopping Market Insights", "Air Shopping, Market Insights")
+        with open(p, "w") as fh:
+            fh.write("\n".join(lines) + "\n")
+        r = run(self.CHECK, "--pricebook", p)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("more cells", r.stdout)
+
+    def test_decimal_comma_is_refused_not_multiplied(self):
+        r = self.check(lambda rs: rs[0].update(list_price="1,5"))
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("decimal comma", r.stdout)
+        self.assertEqual(self.check(lambda rs: rs[0].update(list_price="3,000", floor_price="2,000")).returncode, 0)
+
     def test_missing_file_is_a_clean_error(self):
         r = run(self.CHECK, "--pricebook", self.path("nope.csv"))
         self.assertNotEqual(r.returncode, 0)
@@ -194,6 +243,17 @@ class TestHarvestInputErrors(TmpCase):
         self.assertEqual(r.returncode, 0)
         self.assertNotIn("pattern to confirm", r.stdout)
 
+    def test_name_variants_roll_up_to_one_customer(self):
+        body = "".join("k%d,%s,500000,50,100,\n" % (i, n) for i, n in enumerate(("Acme Travel", "ACME Travel", "Acme Travel Inc."), 1))
+        p = self.path("k.csv")
+        with open(p, "w") as fh:
+            fh.write("key_id,customer,searches,bookings\n" + "".join("k%d,%s,500000,50\n" % (i, n) for i, n in enumerate(("Acme Travel", "ACME Travel", "Acme Travel Inc."), 1)))
+        r = run(self.SCRIPT, "--in", p, "--default-median", "20", "--multiple", "5", "--min-volume", "1000000")
+        by_customer = r.stdout.split("## By key")[0]
+        self.assertEqual(by_customer.count("| Acme Travel |"), 1)
+        self.assertIn("pattern to confirm", by_customer)
+        self.assertIn("treated as one customer", r.stdout)
+
     def test_flag_wording_never_alleges_misuse(self):
         r = self.screen("K1,Acme,100000,1\n", "--multiple", "5")
         self.assertIn("pattern to confirm with the account owner", r.stdout)
@@ -268,6 +328,48 @@ class TestGuardHook(TmpCase):
         for raw in ("", "not json", "[]", "null", '{"tool_name": "Write"}'):
             out = self.call(None, raw=raw)
             self.assertFalse(self.denied(out), raw)
+
+    def test_gemini_before_tool_payload_gets_the_gemini_deny_shape(self):
+        out = self.call({"hook_event_name": "BeforeTool", "tool_name": "write_file",
+                         "tool_input": {"file_path": "workspace/outputs/x.md", "content": "Status: Approved"}})
+        self.assertEqual(out.get("decision"), "deny")
+        self.assertNotIn("hookSpecificOutput", out)
+
+    def test_decided_is_the_councils_word_too(self):
+        for content in ("Status: Decided\n", "**Status:** decided\n"):
+            out = self.call({"tool_name": "Write", "tool_input": {"file_path": "workspace/outputs/x.md", "content": content}})
+            self.assertTrue(self.denied(out), content)
+
+    def test_other_ways_to_write_approved_are_denied(self):
+        cases = {
+            "workspace/price-book/pb.csv": ["line_id,status\nL1,Approved by Council\n", "line_id,Approval_Status\nL1,Council Approved\n",
+                                            "line_id,status\nL1,Approved.\n", "line_id;price;status\nL1;5;Approved\n"],
+            "workspace/outputs/x.md": ["| Status | Approved |\n", "Status - Approved\n", "- **Status**: Approved\n", "status = approved\n"],
+            "workspace/outputs/x.json": ['{"\\u0073tatus": "approved"}', '{"approval_status": "Approved"}', '{"a": [{"status": "Decided"}]}'],
+            "workspace/outputs/x.markdown": ["Status: Approved\n"],
+            "workspace/outputs/NOTES": ["Status: Approved\n"],
+        }
+        for path, contents in cases.items():
+            for content in contents:
+                out = self.call({"tool_name": "Write", "tool_input": {"file_path": path, "content": content}})
+                self.assertTrue(self.denied(out), (path, content))
+
+    def test_swapping_which_row_is_approved_is_denied(self):
+        p = self.path("workspace", "price-book", "pb.csv")
+        os.makedirs(os.path.dirname(p))
+        with open(p, "w") as fh:
+            fh.write("line_id,status\nL1,Approved\nL2,Draft\n")
+        out = self.call({"tool_name": "Write", "tool_input": {"file_path": p, "content": "line_id,status\nL1,Draft\nL2,Approved\n"}})
+        self.assertTrue(self.denied(out))
+
+    def test_symlink_with_an_innocent_name_is_judged_by_its_target(self):
+        target = self.path("price-book.csv")
+        with open(target, "w") as fh:
+            fh.write("line_id,status\nL1,Draft\n")
+        link = self.path("notes.csv")
+        os.symlink(target, link)
+        out = self.call({"tool_name": "Write", "tool_input": {"file_path": link, "content": "line_id,status\nL1,Approved\n"}})
+        self.assertTrue(self.denied(out))
 
     def test_draft_and_proposed_are_allowed(self):
         out = self.call({"tool_name": "Write", "tool_input": {"file_path": "workspace/outputs/x.md", "content": "Status: Draft\nStatus: For decision\n"}})
@@ -365,6 +467,30 @@ class TestNotebookGuards(TmpCase):
             self.assertNotEqual(r.returncode, 0, bad)
         self.assertTrue(os.path.isdir(os.path.join(inst, "workspace", "context-library")))
 
+    def test_dist_is_refused_so_the_coach_pack_cannot_be_overwritten(self):
+        inst = self.inst()
+        os.makedirs(os.path.join(inst, "workspace", "accounts", "atlas"))
+        with open(os.path.join(inst, "workspace", "accounts", "atlas", "s.md"), "w") as fh:
+            fh.write("# Atlas\n")
+        for out in (os.path.join(inst, "dist", "notebook-packs", "pricing-coach"), os.path.join(inst, "dist", "x")):
+            self.assertNotEqual(inst_pdos(inst, "notebook-pack", "--account", "atlas", "--out", out).returncode, 0, out)
+
+    def test_links_leading_outside_the_account_folder_are_not_packed(self):
+        inst = self.inst()
+        acc = os.path.join(inst, "workspace", "accounts", "atlas")
+        os.makedirs(acc)
+        with open(os.path.join(acc, "s.md"), "w") as fh:
+            fh.write("# Atlas\n")
+        secret = self.path("outside_secret.md")
+        with open(secret, "w") as fh:
+            fh.write("ZZZ-OUTSIDE-SECRET\n")
+        os.symlink(secret, os.path.join(acc, "link.md"))
+        r = inst_pdos(inst, "notebook-pack", "--account", "atlas")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        src = os.path.join(inst, "workspace", "outputs", "notebook-packs", "account-atlas", "sources")
+        for f in os.listdir(src):
+            self.assertNotIn("ZZZ-OUTSIDE-SECRET", read(os.path.join(src, f)))
+
     def test_non_empty_foreign_folder_is_not_cleared(self):
         inst = self.inst()
         os.makedirs(os.path.join(inst, "workspace", "accounts", "atlas"))
@@ -420,6 +546,75 @@ class TestLintAndSkillRules(TmpCase):
             self.assertTrue(THRESHOLD_RE.search(line), line)
 
 
+class TestImporterHonesty(TmpCase):
+    IMPORT = os.path.join(SK, "price-book-import", "scripts", "import_price_book.py")
+    SRC = ("Product,Category,Type,Unit,Band,Price,Floor,License Type,FY Revenue,Accounts\n"
+           "Fare Data,Data,Data License,per year,1-1000,EUR 5.00,3,Enterprise,1000,5\n"
+           "Fare Data,Data,Data License,per year,1001-5000,\u20ac4.00,3,Enterprise,2000,6\n"
+           "Search API,API,,per call,all,$0.10,,Internal Use Only,500,2\n"
+           "Shop API,API,api,per call,all,0.20,,,-,1\n")
+
+    def go(self, *extra):
+        src = self.path("in.csv")
+        with open(src, "w", encoding="utf-8") as fh:
+            fh.write(self.SRC)
+        out = self.path("out")
+        r = run(self.IMPORT, "--in", src, "--out-dir", out, *extra)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        with open(os.path.join(out, "price_book.csv"), newline="", encoding="utf-8") as fh:
+            book = list(csv.DictReader(fh))
+        with open(os.path.join(out, "product_rights_handoff.csv"), newline="", encoding="utf-8") as fh:
+            hand = list(csv.DictReader(fh))
+        with open(os.path.join(out, "import_report.md"), encoding="utf-8") as fh:
+            report = fh.read()
+        return book, hand, report
+
+    def test_a_label_that_is_not_a_right_is_not_called_stated(self):
+        book, _, report = self.go()
+        fare = [b for b in book if b["product_id"] == "Fare Data"]
+        self.assertTrue(all(b["conferred_right"] == "" and b["right_basis"] == "" for b in fare))
+        self.assertIn("'Enterprise' is not one of the nine rights", report)
+
+    def test_a_recognised_right_in_other_words_is_read(self):
+        book, _, _ = self.go()
+        search = [b for b in book if b["product_id"] == "Search API"][0]
+        self.assertEqual((search["conferred_right"], search["right_basis"]), ("internal_use", "stated"))
+
+    def test_currency_named_in_the_price_cell_is_kept(self):
+        book, _, report = self.go()
+        self.assertEqual({b["currency"] for b in book if b["product_id"] == "Fare Data"}, {"EUR"})
+        search = [b for b in book if b["product_id"] == "Search API"][0]
+        self.assertEqual(search["currency"], "")
+        self.assertIn("no --default-currency", report)
+
+    def test_data_license_type_reaches_the_rights_handoff(self):
+        book, hand, _ = self.go()
+        self.assertEqual({b["product_type"] for b in book if b["product_id"] == "Fare Data"}, {"data_license"})
+        self.assertIn("Fare Data", {h["product_id"] for h in hand})
+
+    def test_term_and_tier_model_are_not_invented(self):
+        book, _, report = self.go()
+        self.assertTrue(all(b["term_months"] == "" and b["tier_model"] == "" for b in book))
+        self.assertIn("Unknown, not assumed", report)
+
+    def test_revenue_that_differs_by_tier_row_is_kept_and_flagged(self):
+        book, _, report = self.go()
+        fare = [b for b in book if b["product_id"] == "Fare Data"]
+        self.assertEqual([b["annual_revenue"] for b in fare], ["1000.0", "2000.0"])
+        self.assertIn("revenue differs between tier rows", report)
+
+    def test_bad_map_values_stop_the_run(self):
+        src = self.path("in.csv")
+        with open(src, "w", encoding="utf-8") as fh:
+            fh.write(self.SRC)
+        mp = self.path("map.json")
+        with open(mp, "w") as fh:
+            json.dump({"types": {"Fare Data": "feed"}}, fh)
+        r = run(self.IMPORT, "--in", src, "--out-dir", self.path("o2"), "--map", mp)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("not one of the allowed values", r.stderr)
+
+
 class TestTriageFailsClosed(TmpCase):
     SCRIPT = os.path.join(SK, "deal-desk-triage", "scripts", "triage_rank.py")
     HEAD = "request_id,account,product,request_type,tcv,requested_discount_pct,received,due,anchor_deal\n"
@@ -448,6 +643,20 @@ class TestTriageFailsClosed(TmpCase):
     def test_anchor_deal_goes_through_account_price_fit(self):
         r = self.go("R-1,Acme,API,non_standard_quote,1000,5,2026-10-20,2026-10-30,yes\n", "--band-pct", "10")
         self.assertIn("account-price-fit", self.row(r.stdout, "R-1"))
+
+    def test_a_blank_discount_is_unknown_not_zero(self):
+        r = self.go("R-1,Acme,API,standard,1000,,2026-10-20,2026-10-30,\n", "--band-pct", "10")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        row = self.row(r.stdout, "R-1")
+        self.assertIn("Unknown", row)
+        self.assertNotIn("quote from the price book", row)
+        self.assertIn("ask the requester", row)
+
+    def test_over_band_data_licence_gets_its_right_priced_first(self):
+        r = self.go("R-1,Acme,Feed,data_licence,1000,30,2026-10-20,2026-10-30,\n", "--band-pct", "10")
+        row = self.row(r.stdout, "R-1")
+        self.assertIn("data-license-pricing", row)
+        self.assertIn("deal-desk-review", row)
 
     def test_bad_rows_are_listed_not_dropped(self):
         r = self.go("R-1,Acme,API,standard,lots,5,2026-10-20,2026-10-30,\nR-2,Acme,API,standard,1000,0,2026-10-20,2026-10-30,\n", "--band-pct", "10")
@@ -487,9 +696,111 @@ class TestAccountWaterfallFailsClosed(TmpCase):
         r = self.go(lambda d: d["anchor"].update(annual_revenue="lots"))
         self.assertEqual(r.returncode, 2)
 
+    def route_of(self, r, name):
+        return [ln for ln in r.stdout.splitlines() if ln.startswith("| " + name + " |")][0]
+
+    def test_a_concession_through_the_anchor_is_not_at_list(self):
+        def mut(d):
+            d["options"] = [{"name": "Quiet", "price": d["addon"]["list_price"], "incentive_change_annual": 300000,
+                             "anchor_revenue_change_annual": -200000}]
+        r = self.go(mut)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("ESCALATE", self.route_of(r, "Quiet"))
+        self.assertIn("concession through the anchor", r.stdout)
+
+    def test_a_cap_that_cannot_be_checked_escalates(self):
+        def mut(d):
+            d["anchor"].pop("annual_list_value")
+            d["options"] = [{"name": "Disc", "price": d["addon"]["list_price"] * 0.95, "incentive_change_annual": 0,
+                             "gets": [{"name": "term", "annual_value": 10 ** 9}]}]
+        r = self.go(mut)
+        self.assertIn("ESCALATE", self.route_of(r, "Disc"))
+        self.assertIn("cap cannot be checked", r.stdout)
+
+    def test_a_get_with_no_value_is_not_called_a_give_tied_to_a_get(self):
+        def mut(d):
+            d["options"] = [{"name": "Disc", "price": d["addon"]["list_price"] * 0.95, "incentive_change_annual": 0, "gets": ["goodwill"]}]
+        r = self.go(mut)
+        self.assertNotIn("a give tied to a get", self.route_of(r, "Disc"))
+        self.assertIn("NO VALUED GET", self.route_of(r, "Disc"))
+
+    def test_product_type_and_currency_are_required(self):
+        self.assertEqual(self.go(lambda d: d["addon"].pop("product_type")).returncode, 2)
+        self.assertEqual(self.go(lambda d: d.pop("currency")).returncode, 2)
+
+    def test_extra_ramp_entries_are_reported_not_dropped(self):
+        def mut(d):
+            d["options"] = [{"name": "Long", "price": d["addon"]["list_price"], "incentive_change_annual": 0, "ramp": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}]
+        r = self.go(mut)
+        self.assertIn("extra entries are ignored", r.stdout)
+
     def test_report_never_says_approved(self):
         r = self.go(lambda d: None)
         self.assertNotIn("Status: Approved", r.stdout)
+
+
+class TestDiffAndRightsList(TmpCase):
+    DIFF = os.path.join(SK, "price-book-release", "scripts", "price_book_diff.py")
+    RIGHTS = os.path.join(SK, "rights-handoff", "scripts", "rights_list.py")
+    HEAD = "line_id,product_id,product_type,%s,unit,tier_min,tier_max,list_price,floor_price,currency,term_months,status\n"
+
+    def write(self, name, col, body):
+        p = self.path(name)
+        with open(p, "w") as fh:
+            fh.write(self.HEAD % col + body)
+        return p
+
+    def test_legacy_use_right_column_changes_are_seen(self):
+        old = self.write("o.csv", "use_right", "L1,P1,api_access,internal_use,call,1,,1,0.5,USD,12,Existing\n")
+        new = self.write("n.csv", "use_right", "L1,P1,api_access,redistribution_resale,call,1,,1,0.5,USD,12,Existing\n")
+        r = run(self.DIFF, "--old", old, "--new", new)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("conferred_right", r.stdout)
+        self.assertIn("redistribution_resale", r.stdout)
+
+    def test_blank_line_id_stops_the_comparison(self):
+        old = self.write("o.csv", "conferred_right", "L1,P1,api_access,internal_use,call,1,,1,0.5,USD,12,Existing\n")
+        new = self.write("n.csv", "conferred_right", ",P1,api_access,internal_use,call,1,,0.1,0.5,USD,12,Existing\n")
+        r = run(self.DIFF, "--old", old, "--new", new)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("blank line_id", r.stderr)
+
+    def test_spelling_only_changes_are_not_changes(self):
+        old = self.write("o.csv", "conferred_right", "L1,P1,api_access,internal_use,call,1,,1,0.5,USD,12,Existing\n")
+        new = self.write("n.csv", "conferred_right", "L1,P1,api_access,Internal_Use,call,1,,1.0,0.5,usd,12.0,existing\n")
+        r = run(self.DIFF, "--old", old, "--new", new)
+        self.assertIn("0 field change", r.stdout)
+
+    def test_rights_list_flags_unusable_numbers_and_unknown_rights(self):
+        p = self.path("pb.csv")
+        with open(p, "w") as fh:
+            fh.write("line_id,product_id,product_type,conferred_right,annual_revenue,customers\n"
+                     "L1,P1,api_access,internal_use,nan,3\n"
+                     "L2,P2,api_access,Resell_Everything,100,1\n")
+        r = run(self.RIGHTS, "--pricebook", p)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("nan |", r.stdout)
+        self.assertIn("not usable numbers", r.stdout)
+        self.assertIn("not one of the nine rights", r.stdout)
+
+
+class TestSmallGuards(TmpCase):
+    def test_client_name_cannot_break_the_files(self):
+        for bad in ('A"b', "A\nB", "A{{x}}", "A`b"):
+            r = pdos(ROOT, "new-instance", self.path("i"), "--client", bad)
+            self.assertNotEqual(r.returncode, 0, repr(bad))
+        self.assertFalse(os.path.exists(self.path("i")))
+
+    def test_valuation_needs_a_currency(self):
+        src = os.path.join(SK, "data-product-valuation", "examples", "input.json")
+        d = json.loads(read(src))
+        d.pop("currency")
+        p = self.path("v.json")
+        with open(p, "w") as fh:
+            json.dump(d, fh)
+        r = run(os.path.join(SK, "data-product-valuation", "scripts", "valuation.py"), "--in", p)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("currency", r.stderr)
 
 
 if __name__ == "__main__":

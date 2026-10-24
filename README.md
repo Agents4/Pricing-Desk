@@ -4,7 +4,7 @@ An operating system for the pricing desk of a travel-technology (GDS) company. I
 
 The desk prices what the customer is **granted**. For data and API lines each price states the right it covers. Whether we hold that right is the product manager's call, assessed in the separate **Rights Desk** package (Agents4/Rights-Desk). The two meet at one hand-off list (`product_rights_handoff.csv`).
 
-Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product ships no default threshold: scripts stop and say what is missing rather than fill in a company number. Blank means Unknown.
+Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product ships no company threshold, band, floor, margin, window, currency or term: scripts stop and say what is missing rather than fill one in. Blank means Unknown. Two analysis conveniences remain and are labelled in the output: equal weights when no weighting is supplied, and the sizes of the sensitivity tests in the price corridor (overridable with a `sensitivity` block).
 
 ## Start
 
@@ -73,9 +73,9 @@ Run with python3 from the skill folder. Examples sit in each skill's `examples/`
 
 ## Platforms
 
-Gemini CLI extension (this repo root), Antigravity CLI (`.agents/skills/`), Gemini app skills (zips in `dist/gemini-app/zips/`), Gemini Notebook packs (`dist/notebook-packs/`, `notebook-pack`). Details and the verify list: `adapters/google/`. The Microsoft Copilot guide in `copilot-guide/` is legacy (`copilot-guide/LEGACY.md`).
+Gemini CLI extension (this repo root), Antigravity CLI (`.agents/skills/`), Gemini app skills (zips in `dist/gemini-app/zips/`), Gemini Notebook packs (the coach pack in `dist/notebook-packs/`; company and account packs from `notebook-pack` go to `workspace/outputs/notebook-packs/`). Details and the verify list: `adapters/google/`. The Microsoft Copilot guide in `copilot-guide/` is legacy (`copilot-guide/LEGACY.md`).
 
-The extension also carries a guard hook that blocks writes adding a "Status: Approved" marker to pricing artifacts (price book, Council, decision log, exception log, anything under `workspace/` or `outputs/`); the Council overrides with `PRICING_DESK_COUNCIL=1`. It guards against model mistakes, not against a person.
+The extension also carries a guard hook that blocks writes that add an Approved or Decided status to pricing artifacts (price book, Council, decision log, exception log, anything under `workspace/` or `outputs/`); the Council overrides with `PRICING_DESK_COUNCIL=1`. It guards against model mistakes, not against a person.
 
 ## Upgrading
 

@@ -13,6 +13,7 @@ Usage:
 
 keys.csv columns (header row required):
   key_id, customer, searches, bookings        required on every row
+  customer_group                              optional: the parent account when keys sit under several names (rolled up on this instead of customer)
   segment                                     the segment name used in --segment-median (needed when you give more than one median)
   distinct_queries                            optional: distinct origin, destination and date combinations among the searches
   retention_days                              optional: how long responses are kept, if known
@@ -45,6 +46,15 @@ def num(s):
     if not math.isfinite(v):
         raise ValueError("not a finite number")
     return v
+
+
+SUFFIXES = {"inc", "incorporated", "llc", "ltd", "limited", "corp", "corporation", "co", "company", "gmbh", "plc", "sa", "bv", "ag", "pty", "the"}
+
+
+def cust_key(name):
+    """Roll-up key: case, punctuation and company suffixes do not make a different customer."""
+    words = [w for w in "".join(ch if ch.isalnum() else " " for ch in name.lower()).split() if w not in SUFFIXES]
+    return " ".join(words) or name.lower()
 
 
 def read_rows(path, errors):
@@ -83,7 +93,7 @@ def read_rows(path, errors):
             if not (r.get("key_id") or "").strip() or not (r.get("customer") or "").strip():
                 errors.append(f"{where}: key_id and customer are required")
                 continue
-            rows.append({"key": r["key_id"].strip(), "customer": r["customer"].strip(), "segment": (r.get("segment") or "").strip(),
+            rows.append({"key": r["key_id"].strip(), "customer": r["customer"].strip(), "segment": (r.get("segment") or "").strip(), "group": (r.get("customer_group") or "").strip(),
                          "searches": s, "bookings": b, "distinct": dq, "retention_days": rd_days, "kept_share": ks})
     return rows
 
@@ -175,17 +185,25 @@ def main():
            f"- minimum volume: {'%g searches' % a.min_volume if a.min_volume is not None else 'Unknown (every key judged)'}",
            "", "## By customer (all keys rolled up)",
            "| Customer | Keys | Searches | Bookings | Look-to-book | x median | Distinct-query share | Screen |", "|---|---|---|---|---|---|---|---|"]
-    by_cust = {}
+    by_cust, names = {}, {}
     for r in rows:
-        by_cust.setdefault(r["customer"], []).append(r)
+        k = cust_key(r["group"] or r["customer"])
+        by_cust.setdefault(k, []).append(r)
+        names.setdefault(k, {})[r["group"] or r["customer"]] = True
     cust_rows = []
-    for cust, rs in by_cust.items():
+    merged = []
+    for k, rs in by_cust.items():
+        cust = next(iter(names[k]))
+        if len(names[k]) > 1:
+            merged.append(f"{' / '.join(names[k])} treated as one customer ({cust})")
         s, b = sum(x["searches"] for x in rs), sum(x["bookings"] for x in rs)
         all_d = all(x["distinct"] is not None for x in rs)
         d = sum(x["distinct"] for x in rs) if all_d else None
         rets = [x["retention_days"] for x in rs if x["retention_days"] is not None]
         med = max(x["median"] for x in rs)  # the most generous median when a customer spans segments
         l2b, vs, dr, sig, status = judge(s, b, d, max(rets) if rets else None, med, a)
+        if not all_d and any(x["distinct"] is not None for x in rs):
+            status += f" [distinct-query share n/a: distinct_queries missing on {sum(1 for x in rs if x['distinct'] is None)} of {len(rs)} keys]"
         cust_rows.append((vs if vs is not None else float("inf"), cust, len(rs), s, b, l2b, vs, dr, status))
     for _, cust, n, s, b, l2b, vs, dr, status in sorted(cust_rows, key=lambda x: -x[0]):
         out.append(f"| {cust} | {n} | {s:,.0f} | {b:,.0f} | {show(l2b, ',.1f')} | {show(vs, ',.1f')} | {show(dr, '.2f')} | {status} |")
@@ -199,6 +217,8 @@ def main():
         out.append("| {k} | {c} | {sg} | {s:,.0f} | {b:,.0f} | {l} | {m} | {d} | {rt} | {sc} |".format(
             k=r["key"], c=r["customer"], sg=r["segment"] or "-", s=r["searches"], b=r["bookings"], l=show(l2b, ",.1f"), m=show(vs, ",.1f"),
             d=show(dr, ".2f"), rt="" if r["retention_days"] is None else f"{r['retention_days']:g}", sc=status))
+    if merged:
+        out += ["", "Names rolled up (case, punctuation and company suffixes ignored): " + "; ".join(merged) + ". Use a customer_group column for related companies whose names differ more than that."]
     out += ["", "Ratios come from the input counts (F). A customer's distinct-query share adds distinct counts across its keys, so it can overstate when keys repeat the same queries.",
             "A flag is a question for the account owner, not a finding against the customer. Next: `references/harvest-handling.md`."]
     text = "\n".join(out) + "\n"

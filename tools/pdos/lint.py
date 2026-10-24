@@ -6,7 +6,8 @@ from typing import List, Tuple
 
 from .skills import Issue
 
-STATUSES = {"draft", "for decision", "decided"}
+STATUSES = {"draft", "for decision"}      # Decided is the Council's log entry, written by a person, not by a skill
+COUNCIL_ONLY = {"approved", "decided"}
 NUMERIC = re.compile(r"(\$\s?\d|\d\s?%|\b\d{1,3}(,\d{3})+\b|\b\d+\.\d+\b)")
 TAG = re.compile(r"(\((F|I|A|U)\)|\[(F|I|A|U)\]|\b(F|I|A|U):\s|\|\s*(F|I|A|U)\s*\|)")
 DATE = re.compile(r"\b20\d\d-\d\d-\d\d\b")
@@ -57,10 +58,14 @@ def lint_text(text: str, where: str) -> List[Issue]:
         add("error", "OL003", "missing `Status:` line (rule 6)")
     else:
         s = m.group(1).strip().lower()
-        if s == "approved":
-            add("error", "OL004", "Status is Approved; only the Council logs a decision (rule 10)")
+        if s in COUNCIL_ONLY:
+            add("error", "OL004", "Status is %s; only the Council records that (rule 10). Use Draft or For decision" % m.group(1).strip())
         elif s not in STATUSES:
-            add("error", "OL003", "Status %r is not Draft, For decision or Decided" % m.group(1).strip())
+            add("error", "OL003", "Status %r is not Draft or For decision" % m.group(1).strip())
+    for ln, line in enumerate(lines, 1):   # anywhere in the document, not only near the top
+        mm = re.match(r"^\s*[*_>\-\s]*status\s*\**\s*[:=]\s*\**\s*(approved|decided)\b", line, re.IGNORECASE)
+        if mm and not (m and m.group(0).strip() == line.strip()):
+            add("error", "OL004", "line %d sets a Status of %s; only the Council records that (rule 10)" % (ln, mm.group(1)))
     if not re.search(r"Handling:\s*(Internal|Shareable)", head):
         add("error", "OL005", "missing `Handling: Internal` or `Handling: Shareable` (rule 4)")
     if NUMERIC.search(text) and not TAG.search(text):

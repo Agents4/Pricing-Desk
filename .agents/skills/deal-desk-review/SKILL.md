@@ -19,9 +19,9 @@ Turn a deal request into a decision-ready package for the approver. You recommen
 
 - A rep or deal desk analyst submits a non-standard quote for API access, premium software or data products.
 - A requested discount is outside the band, or a non-standard term is asked for.
-- New or expanded API access is requested (the purpose question applies).
+- The price of an API access request is settled (by `api-access-request`) and the discount or terms need approval.
 
-Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), a data licence request (`data-license-pricing`), or new or expanded API access (`api-access-request`). For an account with an anchor deal, run `account-price-fit` first and record any concession in the exception log.
+Not for: a new list price (`data-price-setting`), a price change for the Council (`price-change-proposal`), the pricing of a data licence request (`data-license-pricing` prices the right; bring the discount here afterwards), or deciding whether new or expanded API access should be granted (`api-access-request`). For an account with an anchor deal, run `account-price-fit` first and record any concession in the exception log.
 
 ## Inputs
 
@@ -34,7 +34,7 @@ Ask for anything missing before analyzing. Do not guess.
 3. **Approval matrix**: tier triggers, approvers, margin floors per product family.
 4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (the minimum number is in the review parameters in `pricing-governance.md`; Unknown if blank, so say how many you found).
 5. **Customer context**: current spend, usage history, renewal date, open disputes, strategic notes.
-6. **For new or expanded API access: the purpose.** What will the customer do with the responses, and for how long will they keep them? Ask when the request does not say. Booking and serving their own traffic is the standard API use. Collecting, storing or analysing data in bulk, rebuilding it, reselling it or feeding AI is a data right and is priced as one (see `price-book-builder/references/api-access-scope.md`).
+6. **The granted right.** For an API or data line, the right the quote grants (`api-access-request` decides the purpose; `data-license-pricing` prices the right). If the quote does not say, stop and send it back to those skills. Booking and serving the customer's own traffic is the standard API use; anything wider is a data right (see `price-book-builder/references/api-access-scope.md`).
 
 If the price book or approval matrix is missing or still a template, say so at the top of the answer. Mark the approval route Unknown, name `pricing-governance.md` as the file to fill, and offer `pd-setup`. Do not use remembered or example tiers or thresholds. Still compute the waterfall and the guardrails that need only the price book.
 

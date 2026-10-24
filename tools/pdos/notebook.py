@@ -152,15 +152,22 @@ def build_coach_pack(core_dir: str, skills, out_dir: str, version: str = "") -> 
     return written
 
 
+def _inside_real(path: str, base: str) -> bool:
+    rp, rb = os.path.realpath(path), os.path.realpath(base)
+    return rp == rb or rp.startswith(rb + os.sep)
+
+
 def _md_files(base: str) -> List[str]:
+    """Markdown files under base. A link that leads outside base is skipped, so a pack cannot pull in a file from elsewhere."""
     out = []
     if not os.path.isdir(base):
         return out
     for dp, dirs, files in os.walk(base):
-        dirs[:] = sorted(d for d in dirs if not d.startswith("."))
+        dirs[:] = sorted(d for d in dirs if not d.startswith(".") and _inside_real(os.path.join(dp, d), base))
         for f in sorted(files):
-            if f.endswith(".md") and not f.startswith(".") and f.lower() != "readme.md":
-                out.append(os.path.join(dp, f))
+            fp = os.path.join(dp, f)
+            if f.endswith(".md") and not f.startswith(".") and f.lower() != "readme.md" and _inside_real(fp, base):
+                out.append(fp)
     return out
 
 
@@ -183,7 +190,7 @@ def build_company_pack(root: str, core_dir: str, out_dir: str) -> List[Tuple[str
         raise SystemExit("workspace/context-library not found")
     rel = lambda p, b: os.path.relpath(p, b)
     sources = []
-    top = [os.path.join(cl, f) for f in sorted(os.listdir(cl)) if f.endswith(".md")]
+    top = [os.path.join(cl, f) for f in sorted(os.listdir(cl)) if f.endswith(".md") and _inside_real(os.path.join(cl, f), cl)]
     if top:
         sources.append(("Company context", assemble("Company context", [(rel(f, cl), _read(f)) for f in top],
                                                     "Files still marked status: template hold no company facts; every value in them is Unknown.")))

@@ -38,14 +38,14 @@ Usage-pattern and machine-traffic signals are always "usage pattern to confirm w
 | 3 | lint: no number in a table without a tag; script name and inputs shown |
 | 4 | lint: Handling line present |
 | 5 | lint: handoff section has four parts when present |
-| 6, 10 | lint: Status is Draft or For decision; hook blocks Approved |
+| 6, 10 | lint: Status is Draft or For decision (Approved and Decided are errors); the guard hook blocks adding either to a pricing artifact |
 | 7 | review note attached; checker run in release mode for price books |
 | 8 | checker: data or API line without a granted right is an error in release mode |
-| 9 | eval cases compare numbers with script output |
+| 9 | the scripts compute and unit tests cover them; eval cases describe the expected behavior for a reviewer, they are not run automatically |
 | 11 | lint: every analog row has a URL and an access date |
-| 12 | eval case "do we hold the right" expects a hand-off, not an answer |
-| 13 | eval cases: list-price skills take no account input; every discount has a give and a get |
-| 14 | eval cases with an empty context library expect Unknown, not a number |
+| 12 | eval case "do we hold the right" expects a hand-off, not an answer (read by a reviewer, not run automatically) |
+| 13 | `account_waterfall.py` flags a discount with no valued get and routes a concession through the anchor to escalation; eval cases for the rest are read by a reviewer |
+| 14 | scripts stop with exit 2 when a company value is missing and `pdos validate` flags numeric thresholds in skills and defaults in scripts (SK090, SK091); eval cases with an empty context library are read by a reviewer |
 
 ## Evidence tags in practice
 
@@ -65,7 +65,7 @@ Every output starts with:
 # <Title>
 **Answer:** <the answer or the decision needed, one or two lines>
 **Decision and owner:** <the decision this serves> / <who decides>
-Status: Draft | For decision | Decided      Handling: Internal | Shareable      Date: <YYYY-MM-DD>
+Status: Draft | For decision               Handling: Internal | Shareable      Date: <YYYY-MM-DD>
 ```
 
 ## Where files go

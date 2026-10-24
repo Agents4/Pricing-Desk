@@ -561,7 +561,7 @@ def lines_csv(inp, base, ladder, path):
                 conferred_right=ur, right_basis=basis, delivery="", unit=inp["unit"], tier_min=1, tier_max="",
                 list_price="" if x["list"] is None else round(x["list"], 2), floor_price=round(x["floor"], 2),
                 currency=inp["currency"], term_months=inp.get("term_months", ""),
-                tier_model="all_units", minimum_commitment="", retention_term="", audit_right="",
+                tier_model="", minimum_commitment="", retention_term="", audit_right="",
                 status="Draft", version="0.1", notes="; ".join(notes)))
 
 
