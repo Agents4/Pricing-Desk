@@ -21,7 +21,7 @@ Existing skill names stay (installs keep working). New system skills use the `pd
 | Skill | Stage | What it does |
 |---|---|---|
 | pd-start | all | Entry point: reads context, asks what the user needs, routes to a skill or rhythm |
-| pd-setup | 1, 2 | Builds the context library: business info, approval matrix, margin floors, product catalog, price book location, rights hand-off location |
+| pd-setup | 1, 2 | Interviews three questions at a time and writes the context library (09-context-library.md): governance, approval matrix, floors, product catalog, deal structures, systems, hand-off route, guardrails, writing style. Writes only what the user says; Unknown otherwise |
 | deal-desk-triage | 9 | Daily: ranks open requests, runs the right skill per request, produces the exception log |
 | weekly-pricing-review | 10 | Weekly: one-page review from realization and API usage outputs |
 | council-decision-pack | 7 | Monthly: decisions first, options, numbers, risks, rights hand-off status |

@@ -1,6 +1,6 @@
 # Open questions for the owner
 
-Being taken one at a time with the owner. Answered so far: anchor deal mechanics (incentives paid to agencies; add-on product priced on look-to-book and other value adds; list price independent of the account).
+Being taken one at a time with the owner. Company-specific values (Council, thresholds, systems, hand-off route) are not design blockers: the pd-setup interview collects them into the context library (09-context-library.md) and they can differ per company. Still open for the design itself: items 6 to 10. Answered so far: anchor deal mechanics (incentives paid to agencies; add-on product priced on look-to-book and other value adds; list price independent of the account).
 
 1. **Council membership and quorum.** Who sits on the Pricing Council, who chairs, and what is delegated to the deal desk? Until set, the OS uses placeholders in the approval matrix.
 2. **Approval thresholds.** Discount bands, margin floors and who approves each. Needed for the approval matrix. The OS will not invent them.
