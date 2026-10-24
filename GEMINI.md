@@ -29,3 +29,12 @@ This extension is installed at ~/.gemini/extensions/pricing-desk/ (or the folder
 Starting from an existing price book: price-book-import, then price-book-builder (strategy check), and give product_rights_handoff.csv to the product manager. New products: data-price-setting, price-book-builder, then data-license-pricing per deal.
 
 Commands are under /pricing: (for example /pricing:deal-review). Subagent: price-book-checker.
+
+## Running as a Gemini CLI extension
+
+This context file ships with the Pricing Desk extension. Your project folder is the working folder.
+
+- Skills are active by name. Slash commands live under `/pricing:`, for example `/pricing:deal-review`.
+- Scripts sit inside each skill (`skills/<name>/scripts/`). Run them with `python3`, using the path your skill gives you. They read files you point them to and write only where you tell them.
+- Company facts, thresholds and the Council live in your context library (`workspace/context-library/`). Run the setup skill to create and fill it. Nothing is written into the extension folder.
+- Where a skill refers to `core/shared/...`, the same file is included inside the skill as `references/...`.

@@ -1,0 +1,15 @@
+Product,Category,Description,Pricing Unit,Volume Band,List Price (USD),Min Price,Term,FY Revenue,Accounts
+Shopping API,Air API,Fare search and shopping requests,"per 1,000 calls",0 - 1M,$2.00,$1.20,12 mo,"$520,000",40
+Shopping API,Air API,Fare search and shopping requests,"per 1,000 calls",1M - 10M,$1.60,$1.00,12 mo,"$520,000",40
+Shopping API,Air API,Fare search and shopping requests,"per 1,000 calls",10M+,$1.30,$0.90,12 mo,"$520,000",40
+Booking API,Air API,Booking and ticketing transactions,per transaction,all,$0.45,$0.30,12 mo,"$310,000",35
+Agent Desktop,Software,Agent desktop subscription,per seat per year,1 - 49,"$1,440",$960,12 mo,"$900,000",300
+Agent Desktop,Software,Agent desktop subscription,per seat per year,50+,"$1,200",$840,12 mo,"$900,000",300
+Corporate Booking Tool,Software,Corporate self-booking platform,per user per year,all,$96,,12 mo,"$450,000",22
+Implementation Services,Services,Onboarding and integration consulting,per day,all,"$1,500",,one-time,"$200,000",12
+Premium Support,Services,24x7 premium support plan,per year,all,"$18,000",,12 mo,"$180,000",10
+Air Fare Benchmark Data,Data,Monthly fare benchmark data file,per file feed per year,all,"$50,000","$40,000",12 mo,"$300,000",6
+Air Fare Benchmark Data - Resale,Data,Benchmark data with redistribution to clients,per file feed per year,all,"$90,000","$70,000",12 mo,"$150,000",2
+Route Demand Insights,Data,Route demand insights API,"per 1,000 queries",0 - 5M,$8.00,$6.00,12 mo,"$240,000",9
+Route Demand Insights,Data,Route demand insights API,"per 1,000 queries",5M+,$6.50,$5.00,12 mo,"$240,000",9
+Hotel Rate Shop Dataset,Data,Hotel rate parity dataset,per property per year,all,$12,,12 mo,"$75,000",4

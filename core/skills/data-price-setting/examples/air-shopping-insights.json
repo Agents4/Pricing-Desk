@@ -1,0 +1,130 @@
+{
+  "illustrative": true,
+  "product": "Air Shopping Market Insights",
+  "product_type": "data_license",
+  "currency": "USD",
+  "unit": "market-year (one origin-destination market, 12 months of access)",
+  "base_right": "internal_use",
+  "coverage": {
+    "current": 0.6,
+    "reference": 0.9,
+    "resolved": 0.85,
+    "elasticity": 1.0
+  },
+  "cost": {
+    "annual_fixed": 450000,
+    "variable_per_unit": 400,
+    "royalty_pct": 0.05,
+    "min_margin_pct": 0.35,
+    "cannibalization_per_unit": 150
+  },
+  "discount": {
+    "expected_list_to_realized": 0.15
+  },
+  "value": {
+    "max_capture_share": 0.5,
+    "segments": [
+      {
+        "name": "Large TMC",
+        "customers": 25,
+        "penetration": 0.4,
+        "units_per_customer": 40,
+        "value_per_customer_per_year": 640000,
+        "capture_share": 0.2,
+        "source": "interview"
+      },
+      {
+        "name": "OTA",
+        "customers": 15,
+        "penetration": 0.3,
+        "units_per_customer": 60,
+        "value_per_customer_per_year": 1200000,
+        "capture_share": 0.15,
+        "source": "estimate"
+      },
+      {
+        "name": "Airline revenue management",
+        "customers": 40,
+        "penetration": 0.25,
+        "units_per_customer": 15,
+        "value_per_customer_per_year": 270000,
+        "capture_share": 0.2,
+        "source": "estimate"
+      }
+    ]
+  },
+  "market": {
+    "comps": [
+      {
+        "name": "Comparable A (public list price)",
+        "unit_price": 3200,
+        "comparability": 0.7,
+        "source": "public price list, invented"
+      },
+      {
+        "name": "Comparable B (published rate card)",
+        "unit_price": 2400,
+        "comparability": 0.5,
+        "source": "published rate card, invented"
+      }
+    ]
+  },
+  "wtp": {
+    "points": [
+      {
+        "segment": "Large TMC",
+        "max_price_per_unit": 3500
+      },
+      {
+        "segment": "Large TMC",
+        "max_price_per_unit": 2800
+      },
+      {
+        "segment": "Large TMC",
+        "max_price_per_unit": 4200
+      },
+      {
+        "segment": "OTA",
+        "max_price_per_unit": 2500
+      },
+      {
+        "segment": "Airline revenue management",
+        "max_price_per_unit": 3000
+      },
+      {
+        "segment": "Airline revenue management",
+        "max_price_per_unit": 3800
+      }
+    ]
+  },
+  "rights": [
+    {
+      "right": "internal_analytics_shared_outputs",
+      "incremental_value_per_unit": 900,
+      "capture_share": 0.25,
+      "incremental_cost_per_unit": 50,
+      "basis": "interviews: two TMCs share summaries with corporate clients (invented)"
+    },
+    {
+      "right": "display_to_third_parties",
+      "incremental_value_per_unit": 2400,
+      "capture_share": 0.25,
+      "incremental_cost_per_unit": 300,
+      "basis": "OTA display case: conversion lift, plus supplier approval cost (invented)"
+    },
+    {
+      "right": "redistribution_resale",
+      "incremental_value_per_unit": 6000,
+      "capture_share": 0.25,
+      "incremental_cost_per_unit": 800,
+      "basis": "resale case: lets buyers pass the product on (invented)"
+    },
+    {
+      "right": "ai_retrieval_grounding",
+      "incremental_value_per_unit": 1500,
+      "capture_share": 0.25,
+      "incremental_cost_per_unit": 120,
+      "basis": "agent grounding case: assistants answer fare-trend questions from this data (invented)"
+    }
+  ]
+}
