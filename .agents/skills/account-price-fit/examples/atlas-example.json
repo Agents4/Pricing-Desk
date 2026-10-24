@@ -1,0 +1,15 @@
+{
+  "account": "Atlas Travel (invented example)",
+  "currency": "USD",
+  "term_months": 36,
+  "anchor": {"annual_revenue": 4000000, "annual_incentives_paid": 1800000, "annual_cost_to_serve": 600000},
+  "addon": {"name": "Shopping Insights API", "unit": "1,000 calls", "product_type": "api_access",
+            "granted_right": "internal_use", "list_price": 12.0, "floor_price": 7.0, "annual_units": 50000, "unit_cost": 3.0},
+  "discount_band_pct": 15,
+  "options": [
+    {"name": "Hold list", "price": 12.0},
+    {"name": "Trade: 12% off for a 3-year commitment", "price": 10.56, "gets": ["36-month term", "annual minimum of 40,000 units"]},
+    {"name": "Ramp with larger allowance", "price": 12.0, "included_units": 5000, "ramp": [0.5, 0.8, 1.0], "gets": ["conversion to list in year 3", "look-to-book ceiling in the contract"]},
+    {"name": "Deep cut, nothing back", "price": 8.0}
+  ]
+}

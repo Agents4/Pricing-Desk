@@ -1,13 +1,31 @@
 ---
 name: api-usage-tier-fit
-description: Analyze customer API usage against their plan and the price book to find tier mismatches, overage exposure, look-to-book profile, agent-traffic patterns, signs that customers collect data through the API, and upsell, downgrade, or renewal pricing candidates. Use for monthly usage reviews, renewal prep, and metering design questions.
+description: Analyze customer API usage against their plan and the price book to find tier mismatches, overage exposure, look-to-book profile, agent-traffic patterns, signs that customers collect data through the API, and upsell, downgrade, or renewal pricing candidates. Use when monthly usage reviews, renewal prep, and metering design questions.
+compatibility: "Any Agent Skills client. Scripts need Python 3.8+; without a shell the skill works from pasted data and says the check was not run."
+metadata:
+  version: "1.1.0"
+  layer: pricing
+  last_reviewed: "2026-10-24"
+  includes: "shared/operating-rules.md, shared/capabilities.md, shared/output-conventions.md"
 ---
 
 # API Usage and Tier Fit
 
+Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
+
 Show how customers actually use an API product, whether their plan fits, and what pricing action follows.
 
-## Inputs to collect first
+## When to use
+
+- Monthly or weekly API usage reviews, renewal preparation, and metering design questions.
+- A customer's plan looks wrong for the way they use the API.
+- Usage looks like machine traffic or like collecting data.
+
+Not for: pricing a data licence request (`data-license-pricing`) or reviewing a quote (`deal-desk-review`).
+
+## Inputs
+
+Context library files read: `product-catalog.md`, `systems-and-data.md`. If a file still says `status: template`, treat its values as Unknown.
 
 1. **Usage data** by customer and day or week: call counts by call class (for example search, price, book, post-booking, insights queries), bookings or conversions, error and throttled calls, peak rate.
 2. **Current plan** per customer: tier, commit, included volume, overage rate, rate limits, contract end date.
@@ -16,7 +34,7 @@ Show how customers actually use an API product, whether their plan fits, and wha
 
 If call classes are not defined in the data, ask for the mapping before analyzing; do not infer classes from endpoint names without confirmation.
 
-## Process
+## Procedure
 
 1. **Validate the data.** Check coverage by day, missing customers, duplicate rows, and unit consistency. Report gaps.
 2. **Profile usage with code** per customer: monthly volume by call class, trend (3 and 6 month), peak versus average, look-to-book ratio (search or price calls per booking), and share of calls throttled or erroring.
@@ -27,7 +45,7 @@ If call classes are not defined in the data, ask for the mapping before analyzin
 7. **Renewal pricing view.** For customers renewing in the next 180 days, show current spend, usage-implied spend, suggested tier, and the range of price actions that keep the customer on a fair value metric.
 8. **Metering questions.** List unit definitions that caused ambiguity in the analysis, for the Pricing Operations Manager.
 
-## Output format
+## Output
 
 1. **Headline findings** (three to five bullets, each with a number).
 2. **Tier-fit summary table**: counts and revenue by status (right-sized, under-using, over-using, unusual).
@@ -37,7 +55,10 @@ If call classes are not defined in the data, ask for the mapping before analyzin
 6. **Metering and data questions.**
 7. **Inputs and assumptions used.**
 
-## Rules
+## Quality gate
+
+Before finishing, confirm each. They also bind every step above.
+
 
 - Compute with code; show the figures and source files.
 - Recommend actions as options for the account owner to review before any customer outreach. Never draft or send outreach from this skill.

@@ -1,15 +1,33 @@
 ---
 name: price-book-builder
 description: Build and maintain the price book for any product the pricing desk prices (API access, software, services, data licences). Sets list prices, floors, tiers and terms from cost, past deals, willingness-to-pay evidence and benchmarks, states on each data and API line what the customer may do with it, and checks consistency. Use when creating or revising a price book, or after importing an existing one.
+compatibility: "Any Agent Skills client. Scripts need Python 3.8+; without a shell the skill works from pasted data and says the check was not run."
+metadata:
+  version: "1.1.0"
+  layer: pricing
+  last_reviewed: "2026-10-24"
+  includes: "shared/operating-rules.md, shared/capabilities.md, shared/output-conventions.md"
 ---
 
 # Price Book Builder
+
+Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
 
 Create list prices that the desk can quote without a custom study each time. Prices come from evidence. Every data and API line says what the customer may do with what they buy (the **granted right**). That scope is part of the product: the same volume sells at a different price for internal use, for keeping the data, or for reselling it. Read `references/granted-scope.md`, and for API lines `references/api-access-scope.md`.
 
 The desk assumes we hold the rights to grant what it prices. The product manager checks that separately with the rights pack. If an existing price book needs to be brought in first, use the `price-book-import` skill.
 
-## What this skill needs
+## When to use
+
+- Creating or revising a price book for API access, software, services or data licences.
+- After an import, to set floors, tiers, terms and granted rights.
+- A price book must pass the checker before release.
+
+Not for: finding the prices (`data-price-setting`) or releasing the book (`price-book-release`).
+
+## Inputs
+
+Context library files read: `pricing-governance.md` (margin floors, bands), `product-catalog.md`. If a file still says `status: template`, treat its values as Unknown.
 
 1. **Products and scope**: for each data or API product, what the customer receives and what they may do with it. If the scope is not known, price `internal_use` only and say so.
 2. **Product attributes**: coverage, refresh frequency, history depth, delivery methods, volume, and number of current customers.
@@ -21,7 +39,7 @@ The desk assumes we hold the rights to grant what it prices. The product manager
 
 If an input is missing, say what you cannot do without it and what you can do with assumptions that you label clearly.
 
-## Process
+## Procedure
 
 ### 1. Scope the price book
 
@@ -76,7 +94,7 @@ Summarize what the Pricing Council must decide: list prices, tiers, floors, appr
 
 `examples/price-book-example.csv` has data, API and software lines. L005 prices the Shopping API for live booking use only. L006 prices bulk retention of the same responses at a much higher rate, with a minimum commitment. Run it in release mode: no issues.
 
-## Output format
+## Output
 
 1. **Headline**: lines priced by type, data and API lines by granted right, and the main uncertainty.
 2. **Price book table** (summary) and the CSV file.
@@ -86,7 +104,10 @@ Summarize what the Pricing Council must decide: list prices, tiers, floors, appr
 6. **Council decision list**, including data and API products for the product manager to clear.
 7. **Inputs and assumptions used.**
 
-## Rules
+## Quality gate
+
+Before finishing, confirm each. They also bind every step above.
+
 
 - Compute figures with code. Show inputs next to every result.
 - Say which right every data and API line grants. A line without it is not a priced product.

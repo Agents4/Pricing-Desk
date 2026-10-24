@@ -1,0 +1,6 @@
+request_id,account,product,request_type,tcv,requested_discount_pct,received,due
+R-101,Atlas Travel (invented),Shopping Insights API,renewal,1800000,12,2026-10-20,2026-10-28
+R-102,Birch Agency (invented),Fare Feed,data_licence,350000,,2026-10-22,2026-10-30
+R-103,Cedar OTA (invented),Shopping API,api_data_request,90000,,2026-10-23,2026-10-25
+R-104,Delta TMC (invented),Agent Desk,non_standard_quote,220000,22,2026-10-15,2026-10-23
+R-105,Elm Corp (invented),Shopping API,standard,40000,5,2026-10-24,

@@ -1,15 +1,33 @@
 ---
 name: price-book-import
 description: Bring an existing price book (spreadsheet, CSV export, quote tool dump) into the standard price book format. Classifies each line as data, API, software, service or other, finds the lines that do not say what the customer may do with the data or API responses, checks consistency, and writes a hand-off list for the product manager's rights check. Use when the desk already prices established products and needs to start from that price book.
+compatibility: "Any Agent Skills client. Scripts need Python 3.8+; without a shell the skill works from pasted data and says the check was not run."
+metadata:
+  version: "1.1.0"
+  layer: pricing
+  last_reviewed: "2026-10-24"
+  includes: "shared/operating-rules.md, shared/capabilities.md, shared/output-conventions.md"
 ---
 
 # Price Book Import
+
+Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
 
 Start from the price book the business already uses. Import it, check consistency, and find the lines whose scope (what the customer may do) is not stated.
 
 The pricing desk prices API access, software, services and data. It assumes we hold the rights to sell what the price book sells. The product manager checks that separately with the rights pack. This skill does not look at rights held.
 
-## What this skill needs
+## When to use
+
+- The desk already prices established products and needs to start from that price book.
+- A quote tool or spreadsheet export must become the standard format.
+- You need the list of data and API lines whose granted scope is not stated.
+
+Not for: building a new price book (`price-book-builder`) or assessing rights held (the product manager).
+
+## Inputs
+
+Context library files read: `systems-and-data.md`, `rights-handoff.md`. If a file still says `status: template`, treat its values as Unknown.
 
 1. **The existing price book**: .xlsx or .csv. Any layout. Say which sheet if there are several.
 2. Optional but valuable: **annual revenue and customer counts per product** (even rough). They rank the hand-off list.
@@ -17,7 +35,7 @@ The pricing desk prices API access, software, services and data. It assumes we h
 
 If the file cannot be read, or has no price column, say so and stop. Do not invent prices.
 
-## Process
+## Procedure
 
 ### 1. Run the importer
 
@@ -47,7 +65,7 @@ Strategy mode is the default. The checker finds real pricing problems: tiers tha
 
 Give `product_rights_handoff.csv` to the product manager. It lists each data and API product with the right it grants, revenue and customers. The product manager adds the source datasets and decides whether we hold what each right needs. This does not block pricing work. Do not guess the source datasets.
 
-## Output format
+## Output
 
 1. **Headline**: lines imported, products by type, data and API lines with no stated scope, lines with errors.
 2. **Consistency findings** on the existing price book.
@@ -55,7 +73,10 @@ Give `product_rights_handoff.csv` to the product manager. It lists each data and
 4. **Decisions needed** from the person (types, tier model, floors, granted scope, API retention).
 5. **Files written** and **Inputs and assumptions used**.
 
-## Rules
+## Quality gate
+
+Before finishing, confirm each. They also bind every step above.
+
 
 - Never invent a price, floor, term, revenue figure or right. Blank stays blank and is reported.
 - Imported lines have status Existing. Nothing is Approved. Only the Pricing Council sets Approved.

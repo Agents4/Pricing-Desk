@@ -1,0 +1,8 @@
+description = "Handle a request for new or expanded API access by asking what the customer will do with the responses, screening usage for patterns that look like collectin..."
+prompt = """
+Use the api-access-request skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

@@ -1,0 +1,8 @@
+description = "Run the daily deal desk. Ranks open pricing requests by overdue and due date, routes each to the right skill, runs account price fit for anchor-deal accounts..."
+prompt = """
+Use the deal-desk-triage skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

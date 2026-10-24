@@ -1,0 +1,1 @@
+The Council overruled our deal desk recommendation on the Atlas Travel renewal because the same account had received a 12 percent concession on a different product last quarter, and nobody on the desk saw it. We need this not to happen again.

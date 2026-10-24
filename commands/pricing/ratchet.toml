@@ -1,0 +1,8 @@
+description = "Turn a pricing miss into an improvement. Traces a wrong, late, overruled or disputed pricing output to the stage and rule involved, decides whether to change..."
+prompt = """
+Use the pd-ratchet skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

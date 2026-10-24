@@ -29,6 +29,13 @@ Load the skill by name, then follow it.
 | Check API customers sit in the right tier; spot possible data collection | `api-usage-tier-fit` |
 | Propose a price change for the Council | `price-change-proposal` |
 | Design or analyze a willingness-to-pay study | `wtp-study-design` |
+| Not sure where to begin; what is due | `pd-start` |
+| Set up a company or update company facts | `pd-setup` |
+| Turn a miss into an improvement | `pd-ratchet` |
+| Price one product inside a whole account (anchor deal plus add-on) | `account-price-fit` |
+| Run the daily deal desk: rank and route open requests | `deal-desk-triage` |
+| Handle a request for new or expanded API access | `api-access-request` |
+| Add or change a skill | `pd-skill-author` |
 
 ## Context to load
 

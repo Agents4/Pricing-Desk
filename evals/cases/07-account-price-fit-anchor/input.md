@@ -1,0 +1,1 @@
+Atlas Travel (invented) has a three-year GDS agreement; we pay them incentives each year. They want our Shopping Insights data feed added at 25 percent off list because "they are a big account". Help me decide what to offer.

@@ -1,0 +1,8 @@
+description = "Set up the Pricing Desk OS for a company by interviewing one question at a time and writing the context library: business info, governance (Council, approval..."
+prompt = """
+Use the pd-setup skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""
