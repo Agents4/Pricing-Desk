@@ -22,7 +22,7 @@ The product is the same for every company. Everything that differs lives in the 
 Other instance folders: `accounts/<account>/` (account price sheets, deal packages), `price-book/` (current CSV, change log, notice calendar), `outputs/` (reviews, packs, decision log).
 
 ## pd-setup interview
-Order, three questions a turn, summary after each section, Unknown is a valid answer, nothing written until the user approves:
+One question per turn, so each answer can carry detail (this departs from Sales-OS, which asks up to three). Ask the question whose answer unblocks the most; follow up on a thin answer before moving on. Summary after each section, Unknown is a valid answer, nothing written until the user approves. Sections in this order:
 1. Business and products: what is sold, to whom, how revenue is earned.
 2. Governance: Council members and chair, who decides what, discount bands and margin floors, deal desk authority, target response times.
 3. Deal structures: anchor deal mechanics, incentives paid, tiers, notice and protection terms, what is usually traded.
