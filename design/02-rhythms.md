@@ -36,7 +36,7 @@ Every rhythm has an owner role, a trigger, inputs, the skills that run it, an ou
 - **Owner:** pricing lead.
 - **Trigger:** quarter end.
 - **Inputs:** four monthly packs, competitive scan, WTP evidence, win and loss, realization trend.
-- **Skills:** quarterly-price-review (wave 2), competitive-price-scan (wave 2), pricing-win-loss (wave 2), analog-research.
+- **Skills:** quarterly-price-review, competitive-price-scan, pricing-win-loss, analog-research.
 - **Output:** review of every product line against value, market and realization; proposed changes for the Council; refreshed analog library.
 - **Decision:** which lines to change, hold or retire next quarter.
 - **Measure:** lines reviewed, changes proposed against changes approved, forecast against realized effect of changes made earlier.
