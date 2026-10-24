@@ -14,14 +14,24 @@ https://claude.ai/code/artifact/8dc08cc2-0cf5-41ac-8250-eded39f28038 (private to
 | api-usage-tier-fit | Check customers sit in the right API tier |
 | price-change-proposal | Build and justify a price change |
 | wtp-study-design | Design and analyze willingness-to-pay research |
-| dataset-intake-register | Intake a dataset into the data rights register |
-| data-price-setting | Work out what to charge: corridor, use-right ladder, sensitivities (any product; rights only for data) |
-| price-book-import | Bring an existing price book into the standard format, check it, and rank the rights work |
+| dataset-intake-register | Intake a dataset into the data rights register (the rights we hold on the data) |
+| data-price-setting | Work out what to charge: corridor, conferred-right ladder, sensitivities (any product; rights only for data) |
+| price-book-import | Bring an existing price book into the standard format, check it, and rank the register questions |
 | price-book-builder | Build and check the price book for any product, with strategy and release checks |
-| data-license-pricing | Price a customer's data licensing request against the register |
+| data-license-pricing | Price a customer's data licensing request, checking we hold the rights to grant it |
 
 Suggested order, starting from an existing price book: price-book-import, then price-book-builder (strategy check), then dataset-intake-register on the ranked list, in parallel with pricing work.
 Suggested order for a new data product: dataset-intake-register, then data-price-setting, then price-book-builder, then data-license-pricing for each deal.
+
+### Held rights and conferred rights
+The same nine rights appear in two places and mean two different things.
+
+| | Register (Use_Rights sheet) | Price book (conferred_right column) |
+|---|---|---|
+| Records | The rights **we hold** on a dataset: what we may do with it, given our suppliers, contributing customers and the derivative products we may create | The rights **we grant the customer** on a product: what they may do with it |
+| Set by | Evidence; Legal confirms | Pricing proposes; the Pricing Council approves |
+
+We can only confer what we hold. Each data line names its `dataset_id`, its `conferred_right` and its `data_form` (derived, the default, or passthrough). The checker looks up in `skills/price-book-builder/references/rights-coverage.csv` which held rights the dataset must carry for that conferred right, reads them from the register, and takes the worst result. Example: conferring `display_to_third_parties` on a derived product needs `internal_analytics_shared_outputs` (we may supply the outputs) and `display_to_third_parties` (we may let them be shown) held on that dataset. The coverage table is a default for Legal and the Pricing Council to confirm; edit the CSV and the checker follows. Full explanation: `skills/price-book-builder/references/rights-model.md`.
 
 ### Provisional pricing and the release check
 Pricing does not wait for Legal. Data lines whose rights are not confirmed are priced as Provisional, and the checker reports them as warnings (strategy mode, the default). Provisional means usable for strategy and for deciding where rights intake starts; it does not mean cleared to quote. Before a price book goes out for quoting, run the checker with --mode release, which fails any line whose rights are not confirmed or whose floor is missing.
@@ -29,21 +39,21 @@ Pricing does not wait for Legal. Data lines whose rights are not confirmed are p
 | Rights basis | Meaning | Strategy mode | Release mode |
 |---|---|---|---|
 | N/A | Not a data line (software, services, plain API access) | pass | pass |
-| Confirmed | Granted or Conditional, Legal confirmed | pass | pass |
-| Provisional | Unknown, not in the register, or not yet confirmed | warning | error |
-| Contradicted | Register evidence says Prohibited, Legal has not confirmed | warning, top of intake list | error |
-| Blocked | Legal confirmed Prohibited | error | error |
+| Confirmed | Every held right needed is Granted or Conditional, Legal confirmed | pass | pass |
+| Provisional | A needed held right is Unknown, missing from the register, or not yet confirmed | warning | error |
+| Contradicted | A needed held right looks Prohibited, Legal has not confirmed | warning, top of intake list | error |
+| Blocked | Legal confirmed a needed held right Prohibited | error | error |
 
-Only the products that carry data or third-party content need the register. The checker takes an optional register and writes an exposure report that ranks open rights questions by annual revenue, weighted for riskier rights (redistribution, derivative, display, AI uses).
+Only the products that carry data or third-party content need the register. The checker takes an optional register and writes an exposure report that ranks the register questions (a held right we need on a dataset) by the annual revenue that depends on them, weighted when the customer right is broad (redistribution, derivative, display, AI uses), and a backfill file of the held rights the register is missing.
 
 Scripts inside skills (run with python3):
 - price-book-import/scripts/import_price_book.py --in LEGACY.xlsx --out-dir OUT imports an existing price book (example: price-book-import/examples/legacy-price-book.csv).
 - dataset-intake-register/scripts/create_register.py builds an empty register workbook.
 - data-price-setting/scripts/price_corridor.py --in examples/air-shopping-insights.json
-- price-book-builder/scripts/check_price_book.py --pricebook PRICEBOOK.csv [--register REGISTER.xlsx] [--mode strategy|release] [--exposure-csv OUT.csv]
+- price-book-builder/scripts/check_price_book.py --pricebook PRICEBOOK.csv [--register REGISTER.xlsx] [--mode strategy|release] [--exposure-csv OUT.csv] [--backfill-csv OUT.csv]
 
 ## 3. Data rights register example (data-rights-register/)
-air-shopping-register-example.xlsx: agency requests and supplier fare responses, with use rights, evidence, and open questions. Legal confirmation is blank on purpose. build_example.py regenerates it (python3 data-rights-register/build_example.py).
+air-shopping-register-example.xlsx: agency requests and supplier fare responses, with the rights we hold on each dataset, evidence, and open questions. Legal confirmation is blank on purpose. build_example.py regenerates it (python3 data-rights-register/build_example.py).
 
 ## 4. SharePoint kit (sharepoint-kit/)
 Party-aware rights model for rights that vary by agency and supplier: list schema (xlsx and JSON), a resolver that computes effective rights and coverage, and sample data. See sharepoint-kit/README.md.

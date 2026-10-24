@@ -7,9 +7,10 @@ This extension is installed at ~/.gemini/extensions/pricing-desk/ (or the folder
 ## Rules that always apply
 1. Compute, never estimate. Use the scripts or code on the exported data. Do not do arithmetic in prose.
 2. Name the inputs: files, date ranges, assumptions. List what is missing and stop if a needed input is missing. Do not guess.
-3. Data rights: Unknown is the default and silence in a contract is never permission. A use right is Confirmed only when its status is Granted or Conditional and legal_confirmed is Yes. Only Legal sets legal_confirmed. Never set it yourself.
-   Provisional pricing is always allowed. You may price a right that is not yet confirmed, as a strategy, to size the opportunity and to decide where rights intake should start. Label it Provisional, say what it depends on, and never describe it as allowed or cleared to quote. Do not price a right Legal has confirmed as Prohibited. If register evidence says Prohibited but Legal has not confirmed, say it is Contradicted and put it first on the intake list.
-4. The nine use rights are internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding and ai_evaluation. Each AI use is its own right.
+3. Data rights, two directions. The register records the rights WE HOLD on a dataset (what we may do with it). The price book records the rights we CONFER to the customer on a product (conferred_right). We can confer only what we hold. Never read a register row as a customer's right, or a price book right as something we hold. skills/price-book-builder/references/rights-coverage.csv says which held rights each conferred right needs.
+   Unknown is the default and silence in a contract is never permission. A held right is Confirmed only when its status is Granted or Conditional and legal_confirmed is Yes. Only Legal sets legal_confirmed. Never set it yourself.
+   Provisional pricing is always allowed. You may price a right whose held rights are not yet confirmed, as a strategy, to size the opportunity and to decide where rights intake should start. Label it Provisional, say what it depends on, and never describe it as allowed or cleared to quote. Do not price a right when Legal has confirmed we do not hold what it needs. If register evidence says we do not hold it but Legal has not confirmed, say it is Contradicted and put it first on the intake list.
+4. The nine rights, held or conferred, are internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding and ai_evaluation. Each AI use is its own right.
 5. Restrictiveness order: Prohibited, Unknown, Conditional, Granted.
 6. Recommend only. Do not approve a price, set a price book line to Approved, or draft anything to send to a customer. The Pricing Council sets Approved. Before a price book is released for quoting, run the release check; lines with unconfirmed rights fail it.
 7. Customer-specific prices and supplier-confidential terms are used only for the request at hand and are not copied into general summaries.
@@ -28,4 +29,4 @@ This extension is installed at ~/.gemini/extensions/pricing-desk/ (or the folder
 - A customer's data licence request: data-license-pricing
 Starting from an existing price book: price-book-import, then price-book-builder (strategy check), then dataset-intake-register on the ranked list. New data products: dataset-intake-register, data-price-setting, price-book-builder, then data-license-pricing per deal. Pricing and intake run in parallel; they do not wait for each other.
 
-Commands are under /pricing: (for example /pricing:deal-review). Subagents: @rights-reviewer and @price-book-checker.
+Commands are under /pricing: (for example /pricing:deal-review). Subagents: rights-reviewer (read-only) and price-book-checker.

@@ -1,0 +1,7 @@
+line_id,product_id,product_type,product_name,dataset_id,conferred_right,data_form,delivery,unit,tier_min,tier_max,list_price,floor_price,currency,term_months,tier_model,status,version,annual_revenue,customers
+L001,AIR-INSIGHTS,data_license,Air Shopping Market Insights,DS-DER-002,internal_use,derived,API,market-year,1,,3000,2000,USD,12,all_units,Draft,0.1,300000,10
+L002,AIR-INSIGHTS,data_license,Air Shopping Market Insights,DS-DER-002,display_to_third_parties,derived,API,market-year,1,,4500,3000,USD,12,all_units,Draft,0.1,100000,3
+L003,AIR-INSIGHTS,data_license,Air Shopping Market Insights,DS-DER-002,redistribution_resale,derived,API,market-year,1,,9000,6000,USD,12,all_units,Draft,0.1,50000,1
+L004,FARE-FEED,data_license,Supplier Fare Feed,DS-SUP-001,internal_use,passthrough,file,feed-year,1,,50000,40000,USD,12,all_units,Draft,0.1,200000,4
+L005,SHOP-API,api_access,Shopping API,,,,API,per 1000 calls,1,,2.00,1.20,USD,12,all_units,Existing,legacy,500000,40
+L006,AGENT-DESK,software,Agent Desktop,,,,,seat per year,1,,1440,960,USD,12,all_units,Existing,legacy,900000,300

@@ -4,6 +4,8 @@
 Usage: python create_register.py OUTPUT.xlsx
 
 Sheets: Datasets, Use_Rights, Fields, Evidence, Open_Questions, Change_Log, Vocabulary.
+Use_Rights holds the rights WE hold on each dataset (what we may do with it). What a customer is
+granted on a product is a different thing: it is recorded on the price book as conferred_right.
 Dropdown validation is applied to controlled columns. Refuses to overwrite an existing file.
 """
 import sys
@@ -23,6 +25,17 @@ VOCAB = {
         "internal_use", "internal_analytics_shared_outputs", "display_to_third_parties",
         "redistribution_resale", "derivative_data_product", "ai_training",
         "ai_fine_tuning", "ai_retrieval_grounding", "ai_evaluation",
+    ],
+    "use_right_meaning_held": [
+        "internal_use: we may use the data in our own operations",
+        "internal_analytics_shared_outputs: we may share outputs we derive (reports, aggregates) outside our company, including with customers",
+        "display_to_third_parties: we may show the data or substantial extracts to customers and partners",
+        "redistribution_resale: we may pass on or resell the data itself",
+        "derivative_data_product: we may build and sell a new data product from it",
+        "ai_training: we may train or pre-train a model on it",
+        "ai_fine_tuning: we may fine-tune a model on it",
+        "ai_retrieval_grounding: we may supply it to a model or agent at query time",
+        "ai_evaluation: we may benchmark or evaluate a model with it",
     ],
     "right_status": ["Granted", "Conditional", "Prohibited", "Unknown"],
     "yes_no": ["Yes", "No"],

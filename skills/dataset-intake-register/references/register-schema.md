@@ -2,6 +2,8 @@
 
 The register is a workbook with six sheets plus a Vocabulary sheet. One dataset has one row in `Datasets`, many rows in `Use_Rights`, `Fields`, `Evidence`, and `Open_Questions`, and every change is logged in `Change_Log`.
 
+**The register records rights we hold.** `Use_Rights` says what *we* may do with a dataset, given the agreements behind it (our suppliers, the customers who contribute data, licensors) and the derivative products we may create from it. It does not say what a customer may do with a product we sell. That is a different thing: the price book records it as `conferred_right`, and the checker tests it against these rows through the coverage table in the `price-book-builder` skill (`references/rights-model.md`).
+
 ## Datasets
 
 | Column | Meaning |
@@ -30,12 +32,12 @@ The register is a workbook with six sheets plus a Vocabulary sheet. One dataset 
 
 ## Use_Rights
 
-One row per dataset and use right.
+One row per dataset and right we hold.
 
 | Column | Meaning |
 | --- | --- |
 | dataset_id | Link to Datasets |
-| use_right | See vocabulary below |
+| use_right | The right we hold. See vocabulary below |
 | status | Granted, Conditional, Prohibited, Unknown (proposed by intake from the evidence) |
 | conditions | Conditions, limits, or restrictions as stated in the evidence |
 | geography | Where the right applies, if limited |
@@ -45,17 +47,19 @@ One row per dataset and use right.
 | confirmed_by | Legal approver role |
 | confirmed_date | Date |
 
-### Use-right vocabulary
+### Use-right vocabulary (what we may do)
 
-- `internal_use`: use inside the licensee's own business operations
-- `internal_analytics_shared_outputs`: internal analytics where derived outputs (reports, charts) are shared outside the licensee
-- `display_to_third_parties`: showing the data or substantial extracts to the licensee's own customers or partners
-- `redistribution_resale`: passing on or reselling the data itself
-- `derivative_data_product`: building a new data product from this data
-- `ai_training`: training or pre-training a model
-- `ai_fine_tuning`: fine-tuning a model
-- `ai_retrieval_grounding`: supplying the data to a model or agent at query time
-- `ai_evaluation`: benchmarking or evaluating a model
+- `internal_use`: use the data in our own operations
+- `internal_analytics_shared_outputs`: share outputs we derive (reports, aggregates, benchmarks) outside our company, including with customers. For a derived dataset this is the right to supply the product at all
+- `display_to_third_parties`: show the data or substantial extracts to customers and partners
+- `redistribution_resale`: pass on or resell the data itself
+- `derivative_data_product`: build and sell a new data product from this data
+- `ai_training`: train or pre-train a model
+- `ai_fine_tuning`: fine-tune a model
+- `ai_retrieval_grounding`: supply the data to a model or agent at query time
+- `ai_evaluation`: benchmark or evaluate a model
+
+The same nine words are used for the rights a customer is granted on the price book. There they mean what the customer may do with the product. Do not mix the two when you record evidence: a clause that limits what *customers* may do with a product goes in the customer terms, not in this register, unless it also limits what we may do with the data.
 
 ## Fields
 
