@@ -1,8 +1,8 @@
-description = "Import an existing price book, check it, and rank the rights work"
+description = "Import an existing price book, check it, and list what the product manager needs to clear"
 prompt = """
 Use the price-book-import skill for this request. Follow the pricing desk rules in your context.
 
 File and details (sheet, currency, anything known about product types): {{args}}
 
-Run the importer, then the checker in strategy mode with an exposure report and a backfill file. Do not wait for the register or for Legal. Report the import headline, the consistency findings on the existing price book, the intake priority table (held rights the register needs, ranked), and the decisions needed from me (product types, tier model, floors, which products deliver the data itself rather than a derivative, whether API responses carry third-party content). Do not set legal_confirmed or any status of Approved.
+Run the importer, then the checker in strategy mode. Report the import headline, the consistency findings on the existing price book, the data and API lines that do not say what the customer may do with them, the hand-off list for the product manager, and the decisions needed from me (product types, tier model, floors, granted scope, whether any API customer keeps or collects responses). Do not set a status of Approved.
 """

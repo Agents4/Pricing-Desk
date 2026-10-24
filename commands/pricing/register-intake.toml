@@ -1,9 +1,0 @@
-description = "Propose register rows from an agreement and dataset description"
-prompt = """
-Use the dataset-intake-register skill for this request. Follow the pricing desk rules in your context.
-
-Request and inputs: {{args}}
-
-If a needed input is missing, list it and stop.
-Leave legal_confirmed blank. Propose a status for each of the nine rights WE HOLD on the dataset, with evidence. This is what we may do with the data, not what a customer will be allowed to do.
-"""

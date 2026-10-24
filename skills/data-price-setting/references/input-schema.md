@@ -5,16 +5,12 @@ All money fields use one currency. Unit means the value metric chosen in step 1.
 | Field | Meaning |
 |---|---|
 | `product`, `currency`, `unit` | Labels. `unit` is the value metric, e.g. "market-year". |
-| `dataset_id`, `product_id`, `product_type` | Optional. `dataset_id` is the register dataset the product is built from or delivers (several separated by `;`). It marks a product that carries data, so rights apply. Leave it out for API access, software or services. |
+| `product_id`, `product_type` | Optional. `product_type` is data_license, api_access, software, service or other. Data and API products grant a scope to the customer (`base_right`, `rights[]`). Leave the rights out for software and services. |
 | `illustrative` | `true` adds a warning banner to the report. Use for invented examples. |
-| `base_right` | The **conferred** right the corridor prices: what the customer may do with the product. Default `internal_use` for data products. |
-| `data_form` | Optional. `derived` (an aggregate or insight built from the dataset, default) or `passthrough` (the customer receives the data itself). Copied to the price book lines. |
-| `rights_basis` | Optional map from conferred right to `Confirmed`, `Provisional`, `Contradicted` or `Blocked`. Get it from `price-book-builder/scripts/check_price_book.py`: it works out whether we **hold** the rights needed to confer each right, using the register and the coverage table. Do not type it by hand from guesswork. Blocked rights are not priced. Contradicted rights are priced only as a labelled scenario. A right not listed is Provisional. |
-| `eligible_rights`, `prohibited_rights` | Older form. `eligible_rights` count as Confirmed, `prohibited_rights` as Blocked. Prefer `rights_basis`. |
-| (any other right) | For a data product, any right in `rights[]` that is not in `rights_basis` is priced as Provisional. The report carries a "RIGHTS PROVISIONAL" banner when the base right is not Confirmed. |
-| `coverage.current` | Share of volume (or parties) the product can include today, from the register: the parties whose agreements let us hold the rights the product needs. |
+| `base_right` | The right **granted to the customer** that the corridor prices: what the customer may do with the data or API responses. Default `internal_use` for data and API products. |
+| `coverage.current` | Share of the market, volume or parties the product can include today. |
 | `coverage.reference` | The coverage the value estimates assume. |
-| `coverage.resolved` | Coverage if open rights items are resolved. Used for the sensitivity. |
+| `coverage.resolved` | Coverage if it widens (new sources, new markets). Used for the sensitivity. |
 | `coverage.elasticity` | How strongly value follows coverage. 1 means proportional. |
 | `cost.annual_fixed` | Yearly fixed cost to produce and run. |
 | `cost.variable_per_unit` | Cost to serve one unit. |
@@ -27,8 +23,8 @@ All money fields use one currency. Unit means the value metric chosen in step 1.
 | `market.comps[]` | `name`, `unit_price`, `comparability` (0 to 1), `source`. |
 | `wtp.points[]` | `max_price_per_unit`, optionally `segment`. |
 | `weights` | Blend weights for `value`, `market`, `wtp`. Default 0.4, 0.3, 0.3, renormalized over available anchors. |
-| `rights[]` | Extra conferred rights to price: `right`, `incremental_value_per_unit`, `capture_share` (default 0.3), `incremental_cost_per_unit`, `basis`. |
+| `rights[]` | Extra rights to grant, each priced from the value it adds: `right`, `incremental_value_per_unit`, `capture_share` (default 0.3), `incremental_cost_per_unit`, `basis`. |
 
-Outputs: a Markdown report (also printed), optional JSON (`--json`), and optional price book lines (`--csv`) in the `price-book-builder` format, all Draft, single tier, with a note on lines whose rights are provisional.
+Outputs: a Markdown report (also printed), optional JSON (`--json`), and optional price book lines (`--csv`) in the `price-book-builder` format, all Draft, single tier. Each line carries the right it grants (`conferred_right`).
 
 Confidence score: anchors available (3 = 2 points, 2 = 1), value evidence quality (0.9 or more = 2, 0.6 or more = 1), willingness-to-pay points (15 or more = 2, 5 or more = 1), comparables (two or more at 0.6 average comparability = 1), minus 1 if anchors differ by more than 2x. High needs 6, Medium 3 to 5, Low below 3.

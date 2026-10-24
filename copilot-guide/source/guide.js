@@ -6,40 +6,39 @@ B.push({ sub: 'Setup, workflows and guardrails, without creating agents. Checked
 
 B.push({ h1: '1. The short version' });
 B.push({ bullets: [
-  '**Copilot drafts, extracts and organizes.** The register, the calculators and Legal decide.',
+  '**Copilot drafts, extracts and organizes.** The calculators and the Pricing Council decide.',
   '**You do not need agents.** A Notebook that holds the playbooks file, saved prompts, and custom instructions gives most of the value.',
   '**Numbers get checked.** Copilot can slip on arithmetic. Every price comes from a calculation you can see and recompute.',
-  '**Copilot proposes rights; Legal confirms them.** Silence in a contract means Unknown. Copilot can still price an unconfirmed right if it labels the price Provisional. Provisional prices are for strategy and for deciding where Legal time goes, not for quoting.',
+  '**Every price covers a stated right.** For data and API products, say what the customer may do with it. An API price buys the use it states; collecting or keeping data through an API is a data right. Whether we may grant a right is the product manager\'s call, not Copilot\'s.',
   '**Copilot sees what you can open.** Keep contracts in a locked library so the wrong people cannot pull them into a prompt.',
 ] });
 
 B.push({ h1: '2. What Copilot can and cannot do here' });
 B.push({ table: { headers: ['Good use', 'Needs a second check', 'Do not use Copilot for'], widths: [3120, 3120, 3120], rows: [
-  ['Pull proposed register rows from an agreement, with quotes and clause references\nDraft Legal escalation notes\nDraft deal approval memos from a deal request\nBuild risk registers, notice calendars, communication outlines\nDesign interview guides and questionnaires\nSummarize and compare drafts',
+  ['Summarize a customer request and the right it asks for\nDraft questions for the product manager and Legal\nDraft deal approval memos from a deal request\nBuild risk registers, notice calendars, communication outlines\nDesign interview guides and questionnaires\nSummarize and compare drafts',
    'Any arithmetic or waterfall\nCounts across large files\nWhat a contract permits (Legal decides)\nComparing a price with benchmarks\nDeal and customer classifications',
-   'Setting legal_confirmed or approving anything\nContacting customers\nFinal prices without a visible calculation\nInferring competitor prices\nBulk effective-rights results (use the resolver)'],
+   'Approving anything or deciding whether we may grant a right\nContacting customers\nFinal prices without a visible calculation\nInferring competitor prices'],
 ] } });
 
 B.push({ h1: '3. Features you can use without creating agents' });
 B.push({ table: { headers: ['Feature', 'Use it for', 'Notes and checks'], widths: [1900, 3200, 4260], rows: [
   ['Copilot Chat', 'Day-to-day prompts with attached files.', 'Check: whether your tenant has Copilot Chat only or a Microsoft 365 Copilot license. Some features below differ.'],
   ['Custom instructions', 'Standing rules that apply to your chats.', 'Chat settings, Personalization, Custom instructions. Microsoft does not state a character limit on that page, so keep it short. Check whether admin has turned it off.'],
-  ['Notebooks', 'The desk workspace: playbooks, register exports, price book, deals.', 'Up to 300 reference files. Accepts Word, PowerPoint, Excel, PDF, Copilot Pages, Loop, OneNote and web pages. No .md, .csv or .json: convert to Word or Excel. Per-notebook instructions. No charts inside a notebook. Deleting is permanent. You need SharePoint or OneDrive storage.'],
+  ['Notebooks', 'The desk workspace: playbooks, price book, deals.', 'Up to 300 reference files. Accepts Word, PowerPoint, Excel, PDF, Copilot Pages, Loop, OneNote and web pages. No .md, .csv or .json: convert to Word or Excel. Per-notebook instructions. No charts inside a notebook. Deleting is permanent. You need SharePoint or OneDrive storage.'],
   ['Pages', 'Save and share the checked result with named people.', 'Can be converted to Word or PowerPoint. Colleagues can open the page without seeing your chat.'],
   ['Prompt Gallery', 'Save and share the prompts in the playbooks.', 'Your Prompts, and Teams for shared prompts. Microsoft documents that admins can report on saved, liked and shared prompts.'],
   ['Built-in agents (Researcher, Analyst)', 'Use, not create. Analyst reads Excel and CSV attachments and produces tables and charts.', 'Check: Analyst may be unavailable if admin has not enabled it. A third-party source says some of these need the paid license. Microsoft\'s Analyst page does not state whether it runs Python, so do not rely on it for final numbers.'],
   ['Copilot in Excel and Word', 'Formulas, summaries and drafts inside the file.', 'Check: reported to need the paid license. Put data in an Excel table before asking for analysis.'],
-  ['Create a SharePoint list from a prompt', 'Draft the register lists from the schema.', 'Microsoft\'s message center lists it as launched in 2026. Check availability for your site. Review every column it creates.'],
 ] } });
 B.push({ p: '**Ask your administrator:** which license you have, whether Notebooks, Pages and the Prompt Gallery are on, whether Analyst is enabled, and whether you can share a Page with a named group.' });
 
 B.push({ h1: '4. Setup in about 20 minutes' });
 B.push({ numbers: [
-  '**Make one home for the inputs.** In a SharePoint site you own, create folders: Playbooks, Register exports, Price book, Deals, and Contracts. Give Contracts to the register steward and Legal only.',
+  '**Make one home for the inputs.** In a SharePoint site you own, create folders: Playbooks, Price book, Deals, and Contracts. Give Contracts to the people who need them and Legal only.',
   '**Set custom instructions.** In Copilot Chat open settings at the top right, then Chat settings, Personalization, Custom instructions, Edit instructions. Paste the text from custom-instructions.txt and save.',
-  '**Create the notebook** named "Pricing Desk". Add Copilot-Playbooks.docx, the blueprint exported to Word or PDF, the register exports saved as .xlsx, and the price book as .xlsx. Paste notebook-instructions.txt into the notebook\'s instructions. Add important files directly; when you add a folder, Copilot picks only the most relevant files.',
-  '**Save the prompts.** In the Prompt Gallery choose Your Prompts and add one prompt per playbook, named "PD Deal review", "PD Register intake" and so on. Keep customer names out of saved prompts; use the [BRACKETS]. Share them with your team if you can.',
-  '**Run a test** on an invented agreement. Ask for Playbook 1. Confirm that silent rights come back as Unknown and that legal_confirmed stays blank.',
+  '**Create the notebook** named "Pricing Desk". Add Copilot-Playbooks.docx, the blueprint exported to Word or PDF, and the price book as .xlsx. Paste notebook-instructions.txt into the notebook\'s instructions. Add important files directly; when you add a folder, Copilot picks only the most relevant files.',
+  '**Save the prompts.** In the Prompt Gallery choose Your Prompts and add one prompt per playbook, named "PD Deal review", "PD Price book" and so on. Keep customer names out of saved prompts; use the [BRACKETS]. Share them with your team if you can.',
+  '**Run a test** on an invented API request. Ask for Playbook 3 on a customer who wants to "pull all fares for the next year into our database". Confirm that it asks what they will do with the responses, treats collecting data as a data right, and does not price it at the per-call booking rate.',
 ] });
 
 B.push({ h1: '5. The routine for any task' });
@@ -48,22 +47,20 @@ B.push({ numbers: [
   'Name the input files in the prompt. Do not paste whole contracts.',
   'Paste the prompt for the playbook and replace the [BRACKETS].',
   'Check the answer with that playbook\'s "Check before you use it" list.',
-  'Save the checked result to a Page. Send rights questions to Legal. Record confirmed rights in the register, not in Copilot.',
+  'Save the checked result to a Page. Send questions about whether we may grant a right to the product manager, and contract questions to Legal.',
 ] });
 
 B.push({ h1: '6. Workflow quick reference' });
 B.push({ table: { headers: ['Playbook', 'Attach', 'Check before you use it'], widths: [2300, 3000, 4060], rows: [
-  ['1 Register intake', 'Agreement, data dictionary, standard profile', 'Every Granted has a quote and location. Silent rights are Unknown. legal_confirmed is blank.'],
-  ['2 Price setting', 'Costs, segments and value sources, comparables, WTP points, which rights Legal has confirmed', 'Recompute floor and one value price. Inputs have sources. Unconfirmed rights labeled Provisional.'],
-  ['3 Price book', 'Corridor results, register export if any, past deals', 'Each data line has a rights basis. Floor not above list. No tier overlaps or cliffs.'],
-  ['4 Data licence request', 'Request, register export, price book', 'Rights checked. Unknown means a Provisional price and an escalation, never "allowed".'],
-  ['5 Deal desk review', 'Deal, price book, approval matrix, comparables', 'Recompute the waterfall. Tier equals first rule tripped.'],
-  ['6 Price realization', 'Billing, price book, deal log', 'Reconcile first. Stop over 1 percent gap. Approved versus unexplained discount kept apart.'],
-  ['7 API tier fit', 'Usage, plans, price book, call classes', 'Call classes defined. Machine traffic labeled "to confirm".'],
-  ['8 Price change', 'Change, customers, contract summary, price book', 'Clause references quoted. Ranges, not points. Legal items escalated.'],
-  ['9 WTP study', 'Decision and concept, or responses', 'Sample size beside every figure. Stated is not forecast.'],
-  ['10 Rights lookup', 'Agreements, exceptions, profile terms, ceilings', 'As-of date stated. No step skipped. Use the resolver for bulk.'],
-  ['11 Import price book', 'Existing price book (Excel or CSV), revenue per product', 'Nothing invented. Blanks listed. Product types confirmed. Row counts match the source.'],
+  ['1 Price setting', 'Costs, segments and value sources, comparables, WTP points, the right granted', 'Recompute floor and one value price. Inputs have sources. Every price says which right it covers.'],
+  ['2 Price book', 'Corridor results, past deals', 'Each data and API line states its right. Floor not above list. No tier overlaps or cliffs.'],
+  ['3 Data licence or data-access request', 'Request, price book', 'API request to collect data priced as a data right, not at the booking rate. Question for the product manager written.'],
+  ['4 Deal desk review', 'Deal, price book, approval matrix, comparables', 'Recompute the waterfall. Tier equals first rule tripped.'],
+  ['5 Price realization', 'Billing, price book, deal log', 'Reconcile first. Stop over 1 percent gap. Approved versus unexplained discount kept apart.'],
+  ['6 API tier fit', 'Usage, plans, price book, call classes', 'Call classes defined. Machine traffic and possible data collection labeled "to confirm".'],
+  ['7 Price change', 'Change, customers, contract summary, price book', 'Clause references quoted. Ranges, not points. Legal items escalated.'],
+  ['8 WTP study', 'Decision and concept, or responses', 'Sample size beside every figure. Stated is not forecast.'],
+  ['9 Import price book', 'Existing price book (Excel or CSV), revenue per product', 'Nothing invented. Blanks listed. Product types confirmed. Row counts match the source.'],
 ] } });
 
 B.push({ h1: '7. Keeping numbers right' });
@@ -73,13 +70,13 @@ B.push({ bullets: [
   'For sums over big files, put the data in an Excel table and ask Copilot in Excel for formulas, not values. Read the formulas.',
   'Check totals against the source, units, percent versus fraction, and currency.',
   'Run the same prompt twice. If the numbers differ, use neither and move to a script or Excel.',
-  'For the price corridor and effective rights, use the scripts in the package. Ask someone with Python to run them, or bring the files to Claude. Treat Copilot\'s figures as a draft to compare.',
+  'For the price corridor and price book checks, use the scripts in the package. Ask someone with Python to run them, or bring the files to Claude. Treat Copilot\'s figures as a draft to compare.',
   'Large files: ask for row counts first, then work by dataset or by month.',
 ] });
 
 B.push({ h1: '8. Data handling' });
 B.push({ bullets: [
-  '**Permissions:** Copilot works within your access. Keep contract text in a locked library; the register holds summaries and links only.',
+  '**Permissions:** Copilot works within your access. Keep contract text in a locked library.',
   '**Prompts:** reference files by name; do not paste whole contracts or customer lists.',
   '**Sharing:** share Notebooks and Pages with named people. Deleting a notebook or page cannot be undone.',
   '**Saved prompts:** admins can report on saved and shared prompts. Use placeholders instead of customer names or prices.',
@@ -103,7 +100,7 @@ B.push({ h1: '10. Limits and open points' });
 B.push({ bullets: [
   'Microsoft\'s pages I checked do not publish limits for custom instruction or prompt length. The prompts here are short on purpose and the detail sits in the playbooks file.',
   'Notebooks do not show charts. Ask for tables, then chart in Excel.',
-  'Claude skills in this package do not load into Copilot. The playbooks are the Copilot version of the same procedures. Both follow the same rights rules.',
+  'Claude skills in this package do not load into Copilot. The playbooks are the Copilot version of the same procedures. Both follow the same pricing rules.',
   'Where a source was a third-party article rather than Microsoft, the table says so. Confirm licensing with your administrator.',
 ] });
 

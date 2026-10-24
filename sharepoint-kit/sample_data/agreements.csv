@@ -1,7 +1,0 @@
-agreement_id,party_id,profile_id,agreement_type,status,effective_date,expiry_date,legal_confirmed
-AGR-001,AGY-001,PROF-AGY-STD-3,Distribution,Active,2024-01-01,2027-12-31,Yes
-AGR-002,AGY-002,PROF-AGY-STD-3,Distribution,Active,2023-12-16,2026-12-15,Yes
-AGR-100,AIR-A,PROF-AIR-STD-1,Content distribution,Superseded,2021-01-01,2024-02-29,Yes
-AGR-101,AIR-A,PROF-AIR-STD-2,Content distribution,Active,2024-03-01,2028-02-28,Yes
-AGR-102,AIR-B,PROF-AIR-STD-2,Content distribution,Active,2024-06-01,2027-05-31,Yes
-AGR-103,AIR-C,PROF-AIR-STD-2,Content distribution,Active,2022-01-01,2026-09-17,Yes

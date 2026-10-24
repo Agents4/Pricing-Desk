@@ -1,6 +1,6 @@
 {
   "name": "pricing-desk",
-  "version": "0.2.0",
-  "description": "Pricing desk for a travel-technology (GDS) company: ten pricing and data-rights skills, slash commands, two review subagents and guardrail hooks. Examples are invented.",
+  "version": "0.3.0",
+  "description": "Pricing desk for a travel-technology (GDS) company: nine skills for API access, software, services and data products, slash commands, a price book checker subagent and a guardrail hook. Prices the scope granted to the customer. Rights held are assessed in the separate rights pack. Examples are invented.",
   "contextFileName": "GEMINI.md"
 }

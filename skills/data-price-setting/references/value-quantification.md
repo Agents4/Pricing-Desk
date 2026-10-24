@@ -22,6 +22,6 @@ Start from the customer's outcome, not the data. Write the value chain in one li
 ## Cautions
 
 - Stated value is optimistic. Cross-check with a second buyer in the same segment.
-- Do not count value that depends on rights you do not have (for example, display to third parties when the register says Unknown).
+- Count only the value the granted right allows. A customer who may use the data only internally cannot earn from showing it to their own clients; that value belongs to the display right, which is priced separately.
 - Value scales with coverage and freshness. State both.
 - Keep each buyer's figures confidential; use ranges in shared outputs.

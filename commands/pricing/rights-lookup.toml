@@ -1,8 +1,0 @@
-description = "Resolve effective data rights per agency and supplier from register exports"
-prompt = """
-Resolve effective data rights using the resolver script at sharepoint-kit/resolve_effective_rights.py in this extension (read its docstring first for the input CSVs and options).
-
-Request, folder of exported CSVs and as-of date: {{args}}
-
-Run the script with python3 on the exported CSVs. Report the number of effective-rights rows, the coverage, the errors and the warnings, and then the specific cases asked about with the reason for each result. Anything not confirmed is Unknown. If the CSVs are not provided, list the files needed and stop. Do not set legal_confirmed.
-"""
