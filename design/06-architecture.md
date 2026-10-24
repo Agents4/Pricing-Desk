@@ -40,4 +40,4 @@ pricing-desk/
 10. **Rights Desk stays a separate repo.** The OS reads its hand-off answer through a file (`rights_answers.csv`) or the user pastes it; no code dependency.
 
 ## Build order
-Stage A: restructure with no behavior change (manifest, core/, tool, generated targets identical). Stage B: operating rules, templates, evals scaffold. Stage C: wave 1 skills one at a time with an eval each. Stage D: Google adapters and notebook packs. Stage E: test on a real past case (a real quote, a real quarter), fix, release 0.4.0. Waves 2 and 3 after.
+Stage A: restructure with no behavior change (manifest, core/, tool, generated targets identical). Stage B: operating rules, templates, evals scaffold. Stage C: wave 1 skills in five batches (foundation, deal desk, monitor, govern and release, research and design), one skill at a time with an eval each, each batch usable on its own. Stage D: Google adapters and notebook packs. Stage E: test on a real past case (a real quote, a real quarter), fix, release 0.4.0. Wave 3 after.
