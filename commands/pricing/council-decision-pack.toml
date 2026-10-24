@@ -1,0 +1,8 @@
+description = "Assemble the monthly Pricing Council pack with decisions first, each with recommendation, options, computed numbers, risks, stakeholder review and rights han..."
+prompt = """
+Use the council-decision-pack skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

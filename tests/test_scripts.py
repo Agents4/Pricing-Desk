@@ -99,5 +99,42 @@ class TestWinLoss(unittest.TestCase):
         self.assertIn("15.0%", r.stdout)
 
 
+
+class TestRelease(unittest.TestCase):
+    base = os.path.join(SK, "price-book-release")
+    diff = os.path.join(base, "scripts", "price_book_diff.py")
+    cal = os.path.join(base, "scripts", "notice_calendar.py")
+
+    def test_diff(self):
+        r = run(self.diff, "--old", os.path.join(self.base, "examples", "price-book-old.csv"),
+                "--new", os.path.join(self.base, "examples", "price-book-new.csv"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("+11.1%", r.stdout)
+        self.assertIn("Added: L007", r.stdout)
+
+    def test_calendar(self):
+        r = run(self.cal, "--in", os.path.join(self.base, "examples", "contracts.csv"), "--effective", "2027-01-01", "--today", "2026-10-24")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("send-by date passed 21 day(s) ago", r.stdout)
+        self.assertIn("protected until 2027-06-30", r.stdout)
+        self.assertIn("notice period Unknown", r.stdout)
+
+
+class TestRightsList(unittest.TestCase):
+    base = os.path.join(SK, "rights-handoff")
+    script = os.path.join(base, "scripts", "rights_list.py")
+    pb = os.path.join(SK, "price-book-release", "examples", "price-book-new.csv")
+
+    def test_open_and_answered(self):
+        r = run(self.script, "--pricebook", self.pb, "--answers", os.path.join(self.base, "examples", "rights_answers.csv"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("5 open, 1 with an answer on file", r.stdout)
+        self.assertIn("See rights pack entry 12", r.stdout)
+
+    def test_no_answers_all_open(self):
+        r = run(self.script, "--pricebook", self.pb)
+        self.assertIn("6 open", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

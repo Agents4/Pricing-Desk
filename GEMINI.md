@@ -37,6 +37,10 @@ Load the skill by name, then follow it.
 | Handle a request for new or expanded API access | `api-access-request` |
 | Produce the one-page weekly pricing review | `weekly-pricing-review` |
 | Review won and lost deals for pricing causes | `pricing-win-loss` |
+| Assemble the monthly Pricing Council pack | `council-decision-pack` |
+| Read a proposal through Finance, Sales, procurement, product manager and Legal, competitor and metering lenses | `pricing-stakeholder-review` |
+| Release a price book: checker, change log, customer notice calendar | `price-book-release` |
+| Ask the product manager whether we hold a right, and read the answer back | `rights-handoff` |
 | Add or change a skill | `pd-skill-author` |
 
 ## Context to load

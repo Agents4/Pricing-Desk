@@ -8,7 +8,7 @@ This package prices products and services: API access, premium software, service
 Pricing desk blueprint: mandate, tasks, responsibilities, operating model, roles, skills, KPIs, 90-day plan.
 https://claude.ai/code/artifact/8dc08cc2-0cf5-41ac-8250-eded39f28038 (private to the author; it is not stored in this repo)
 
-## 2. AI skills (18 skills in skills/, ready-to-upload zips in dist/gemini-app/zips/)
+## 2. AI skills (22 skills in skills/, ready-to-upload zips in dist/gemini-app/zips/)
 | Skill | Use it to |
 |---|---|
 | deal-desk-review | Review a non-standard deal, route approvals; asks the purpose of new API access |

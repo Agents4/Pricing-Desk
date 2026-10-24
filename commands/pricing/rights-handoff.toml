@@ -1,0 +1,8 @@
+description = "Build the hand-off list of data and API products and the right each price grants, send it by the route in the context library, and read the product manager's..."
+prompt = """
+Use the rights-handoff skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""
