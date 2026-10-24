@@ -71,5 +71,33 @@ class TestAccountWaterfall(unittest.TestCase):
         self.assertIn("Unknown", r.stdout)
 
 
+class TestWeeklyRoll(unittest.TestCase):
+    script = os.path.join(SK, "weekly-pricing-review", "scripts", "weekly_roll.py")
+    csv = os.path.join(SK, "weekly-pricing-review", "examples", "lines.csv")
+
+    def test_rate_and_prior(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("88.4%", r.stdout)
+        self.assertIn("prior 92.1%", r.stdout)
+        self.assertIn("Unlabeled", r.stdout)
+
+    def test_unknown_week_exits(self):
+        r = run(self.script, "--in", self.csv, "--week", "2020-01-06")
+        self.assertNotEqual(r.returncode, 0)
+
+
+class TestWinLoss(unittest.TestCase):
+    script = os.path.join(SK, "pricing-win-loss", "scripts", "winloss_tally.py")
+    csv = os.path.join(SK, "pricing-win-loss", "examples", "deals.csv")
+
+    def test_n_shown(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("won n=2", r.stdout)
+        self.assertIn("lost (n=2)", r.stdout)
+        self.assertIn("15.0%", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

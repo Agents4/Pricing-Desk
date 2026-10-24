@@ -35,6 +35,8 @@ Load the skill by name, then follow it.
 | Price one product inside a whole account (anchor deal plus add-on) | `account-price-fit` |
 | Run the daily deal desk: rank and route open requests | `deal-desk-triage` |
 | Handle a request for new or expanded API access | `api-access-request` |
+| Produce the one-page weekly pricing review | `weekly-pricing-review` |
+| Review won and lost deals for pricing causes | `pricing-win-loss` |
 | Add or change a skill | `pd-skill-author` |
 
 ## Context to load

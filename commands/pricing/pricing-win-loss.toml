@@ -1,0 +1,8 @@
+description = "Review won and lost deals for pricing causes. Tallies outcomes by price cause, discount and competitor, separates what the deal team believes from what is ev..."
+prompt = """
+Use the pricing-win-loss skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

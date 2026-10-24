@@ -1,0 +1,6 @@
+deal_id,account,product,outcome,price_cause,discount_pct,competitor
+D-1,Atlas Travel (invented),Shopping Insights API,won,no_price_reason,12,
+D-2,Birch Agency (invented),Fare Feed,lost,price_too_high,0,Rival A (invented)
+D-3,Cedar OTA (invented),Search API,lost,packaging,5,
+D-4,Delta TMC (invented),Booking API,won,terms,18,
+D-5,Elm Corp (invented),Search API,no_decision,unknown,,
