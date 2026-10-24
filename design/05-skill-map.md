@@ -28,6 +28,7 @@ Existing skill names stay (installs keep working). New system skills use the `pd
 | price-book-release | 8 | Release checklist: checker in release mode, change log, notice calendar, hand-offs |
 | analog-research | 4 | Research for new constructs from public sources, with URL and access date |
 | rights-handoff | 8, 9 | Builds the hand-off list for the product manager; reads back the answer |
+| account-price-fit | 9 | Account context for a deal: anchor economics, incentives paid, cost to serve, give-get plan, precedent check. Spec in 08-account-price-fit.md |
 | pd-ratchet | 11 | Learning loop: turn a miss into a rule, skill change or eval case |
 
 ## Wave 2: depth
@@ -37,4 +38,4 @@ value-metric-design (3), packaging-design (5), api-access-request (9), data-prod
 renewal-price-play, cost-to-serve-model, elasticity-estimate, pricing-health-check (our extension, not a published framework), price-change-postmortem, approval-matrix-design.
 
 ## Sizing
-Wave 1: 9 new skills plus tooling and evals. Existing nine: light edits. Total after wave 1: 18 skills. After wave 3: about 33. Each skill 60 to 150 lines, detail in `references/`.
+Wave 1: 10 new skills plus tooling and evals. Existing nine: light edits. Total after wave 1: 19 skills. After wave 3: about 34. Each skill 60 to 150 lines, detail in `references/`.

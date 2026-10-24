@@ -10,6 +10,7 @@ Every rhythm has an owner role, a trigger, inputs, the skills that run it, an ou
 - **Inputs:** open quote requests, price book, approval matrix, usage for the account if it is an API deal.
 - **Skills:** deal-desk-triage (new), deal-desk-review, data-license-pricing, api-usage-tier-fit.
 - **Output:** a triage list ranked by value and age, a deal package per request (price, granted right, approval route, counteroffer), and the exception log.
+- **Account context:** when the account has an anchor deal, deal-desk-triage runs account-price-fit before the deal package is written. List price is not touched; only the deal price moves, inside the discount band.
 - **Decision:** approve within authority, counter, or escalate.
 - **Measure:** turnaround time against the agreed target, share of requests with a stated granted right, exception rate, discount against floor.
 

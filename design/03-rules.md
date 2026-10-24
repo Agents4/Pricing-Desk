@@ -2,7 +2,7 @@
 
 Status: draft for confirmation.
 
-Seven universal rules from the OS standard (os-builder `docs/standard.md`), stated for pricing, plus five domain rules. Every rule has a check: a way to see whether it was followed. A rule without a check is advice, not a rule.
+Seven universal rules from the OS standard (os-builder `docs/standard.md`), stated for pricing, plus six domain rules. Every rule has a check: a way to see whether it was followed. A rule without a check is advice, not a rule.
 
 ## Universal rules
 | # | Rule | Check |
@@ -23,6 +23,7 @@ Seven universal rules from the OS standard (os-builder `docs/standard.md`), stat
 | D3 | **Only the Council approves.** Prices, floors, approval-matrix changes and exceptions above delegated authority are decided in the Council. The OS drafts and recommends. | Guard hook blocks edits that set status Approved without the override; pack lists decisions as "for decision" |
 | D4 | **Public sources only for outside research.** Analog and competitor research uses public pages with URL and access date. No scraping behind a login, no contact with competitors, no customer data in queries. | Every analog row has URL and date; skill refuses non-public sources |
 | D5 | **Hand rights questions to the product manager.** The OS never says whether we hold a right. It states the granted right it needs and adds the product to the hand-off list. | Hand-off file produced by the importer and release skill; eval case where a user asks "do we have the right" |
+| D6 | **List is independent; the account enters through the deal desk.** List price and corridor are set per product with no knowledge of any account. Account context (the anchor deal, incentives paid, relationship value) may move a deal price only through the deal desk, inside the approved discount band, as a give tied to a get, and logged. Concessions are never hidden in a product's list price. | Corridor and price-book skills take no account input; every deal below list has a logged give and get; exception log reviewed weekly |
 
 ## Evidence tags
 F: shown in a document, system or script output. I: derived from facts by stated logic. A: assumed for now; owner and date to confirm. U: not known; listed in Missing.

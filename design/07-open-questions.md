@@ -1,5 +1,7 @@
 # Open questions for the owner
 
+Being taken one at a time with the owner. Answered so far: anchor deal mechanics (incentives paid to agencies; add-on product priced on look-to-book and other value adds; list price independent of the account).
+
 1. **Council membership and quorum.** Who sits on the Pricing Council, who chairs, and what is delegated to the deal desk? Until set, the OS uses placeholders in the approval matrix.
 2. **Approval thresholds.** Discount bands, margin floors and who approves each. Needed for the approval matrix. The OS will not invent them.
 3. **Target time to answer.** Deal desk turnaround target and the Council pack lead time. Proposed defaults will be marked as proposals.
