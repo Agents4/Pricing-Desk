@@ -26,6 +26,7 @@ Exit codes: 0 = ranked, 2 = unusable input (missing columns, bad --today).
 import argparse
 import csv
 import datetime as dt
+import re
 import sys
 
 ROUTE = {
@@ -44,7 +45,10 @@ def d(s):
 
 
 def num(s):
-    s = (s or "").replace(",", "").replace("$", "").replace("%", "").strip()
+    s = (s or "").replace("$", "").replace("%", "").strip()
+    if re.search(r",\d{1,2}$", s):
+        raise ValueError("a comma before one or two digits looks like a decimal comma; write it with a point")
+    s = s.replace(",", "")
     if not s:
         return None
     v = float(s)
@@ -94,6 +98,9 @@ def main():
             except ValueError as e:
                 problems.append(f"line {i} ({rid}): {e}; not ranked")
                 continue
+            if disc is not None and 0 < disc < 1 and "%" not in (r.get("requested_discount_pct") or ""):
+                problems.append(f"line {i} ({rid}): requested_discount_pct {disc:g} looks like a fraction; write 25 or 25% for twenty-five percent; not ranked")
+                continue
             if disc is not None and (disc < 0 or disc > 100):
                 problems.append(f"line {i} ({rid}): requested_discount_pct {disc:g} is outside 0 to 100; not ranked")
                 continue
@@ -104,11 +111,16 @@ def main():
                 problems.append(f"line {i} ({rid}): due is before received; ranked on the due date as written")
             if rec and rec > today:
                 problems.append(f"line {i} ({rid}): received is after --today; ranked as written")
-            rtype = cell(r, "request_type")
+            rtype = cell(r, "request_type").lower().replace(" ", "_").replace("-", "_")
+            rtype = {"data_license": "data_licence"}.get(rtype, rtype)
             if rtype not in ROUTE:
                 problems.append(f"line {i} ({rid}): request_type {rtype!r} is not one of {', '.join(ROUTE)}; routed to deal-desk-review")
                 rtype = "non_standard_quote"
-            anchor = cell(r, "anchor_deal").lower() in ("yes", "y", "true", "1")
+            araw = cell(r, "anchor_deal").lower()
+            if araw not in ("", "yes", "y", "true", "1", "no", "n", "false", "0"):
+                problems.append(f"line {i} ({rid}): anchor_deal {cell(r, 'anchor_deal')!r} is not yes or no; treated as yes so account-price-fit looks at it")
+                araw = "yes"
+            anchor = araw in ("yes", "y", "true", "1")
             asks = disc is not None and disc > 0
             if disc is None:
                 band = "Unknown: discount not stated"

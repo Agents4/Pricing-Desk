@@ -31,6 +31,7 @@ import json
 import os
 import re
 import sys
+import unicodedata
 from collections import Counter
 
 GUARDED_DIRS = ("workspace", "outputs")
@@ -40,10 +41,17 @@ NAME_RE = re.compile(r"price[-_ ]?book|pricebook|council|decision[-_ ]?log|excep
 EXTS = (".csv", ".tsv", ".json", ".md", ".markdown", ".txt", ".yaml", ".yml")
 # Statuses only the Council may record. "Decided" is the Council's log entry; the model drafts and recommends.
 WORD = r"(?:council[\s-]+)?(?:approved|decided)\b"
-MD_RE = re.compile(r"^[ \t]*[*_#>|\-\s]*(?:approval[ \t]+)?status[ \t]*\**[ \t]*[:=|\-\u2013\u2014]+[ \t|]*\**[ \t]*" + WORD, re.I | re.M)
-KEY_RE = re.compile(r"[\"']?(?:approval[_ ]?)?status[\"']?\s*[:=]\s*[\"']?" + WORD, re.I)
+LABEL = r"(?:approval[ \t_]+|council[ \t]+)?(?:status|decision|outcome)"
+MD_RE = re.compile(r"^[ \t]*[*_#>|\-\s]*" + LABEL + r"[ \t]*\**[ \t]*[:=|\-\u2013\u2014]+[\s|]*\**\s*" + WORD, re.I | re.M)
+KEY_RE = re.compile(r"[\"']?(?:approval[_ ]?)?(?:status|approved)[\"']?\s*[:=]\s*[\"']?(?:true\b|yes\b|" + WORD + ")", re.I)
 VALUE_RE = re.compile(r"^\W*" + WORD, re.I)   # a status cell that starts with Approved or Decided ("Approved by Council", "Approved.")
-STATUS_COL_RE = re.compile(r"status|approval", re.I)
+STATUS_COL_RE = re.compile(r"status|approval|decision|outcome", re.I)
+ZERO_WIDTH = dict.fromkeys(map(ord, "\u200b\u200c\u200d\u2060\ufeff\u00ad"))
+
+
+def fold(text):
+    """Look at what a reader sees: full-width letters and non-breaking spaces fold to plain ones; zero-width characters go."""
+    return unicodedata.normalize("NFKC", text).translate(ZERO_WIDTH)
 
 
 def _candidates(path):
@@ -81,20 +89,43 @@ def is_guarded(path):
 
 
 def _csv_markers(text):
-    """One marker per row whose status-like cell is Approved or Decided: (first cell, column). Any delimiter."""
-    try:
-        sample = text[:4096]
-        delim = max(",;\t|", key=sample.count) if any(d in sample for d in ",;\t|") else ","
-        found = []
-        for r in csv.DictReader(io.StringIO(text), delimiter=delim):
-            cells = list(r.items())
-            ident = (cells[0][1] or "").strip().lower() if cells else ""
-            for k, v in cells:
-                if k and STATUS_COL_RE.search(k) and isinstance(v, str) and VALUE_RE.match(v.strip()):
-                    found.append("row:%s:%s" % (ident, k.strip().lower()))
-        return found
-    except Exception:
-        return []
+    """One marker per row whose status-like cell is Approved or Decided. Every delimiter is tried, comment and blank lines
+    before the header are skipped, so free text full of semicolons cannot steer the parse away from the real columns."""
+    lines = text.splitlines()
+    while lines and (not lines[0].strip() or lines[0].lstrip().startswith("#")):
+        lines.pop(0)
+    body = "\n".join(lines)
+    found = []
+    for delim in (",", ";", "\t", "|"):
+        try:
+            for r in csv.DictReader(io.StringIO(body), delimiter=delim):
+                cells = list(r.items())
+                ident = (cells[0][1] or "").strip().lower() if cells and isinstance(cells[0][1], str) else ""
+                for k, v in cells:
+                    if k and STATUS_COL_RE.search(k) and isinstance(v, str) and VALUE_RE.match(v.strip()):
+                        found.append("row:%s:%s" % (ident, k.strip().lower()))
+        except Exception:
+            continue
+    return sorted(set(found))
+
+
+def _table_markers(text):
+    """Markdown tables: a column whose header says status, approval, decision or outcome, holding Approved or Decided."""
+    found = []
+    rows = [ln.strip() for ln in text.splitlines()]
+    for i, ln in enumerate(rows):
+        if not ln.startswith("|") or i + 1 >= len(rows) or not re.match(r"^\|?\s*:?-{2,}", rows[i + 1].lstrip("|").strip() or "x"):
+            continue
+        head = [c.strip() for c in ln.strip("|").split("|")]
+        cols = [j for j, c in enumerate(head) if STATUS_COL_RE.search(c)]
+        j = i + 2
+        while j < len(rows) and rows[j].startswith("|"):
+            cells = [c.strip() for c in rows[j].strip("|").split("|")]
+            for c in cols:
+                if c < len(cells) and VALUE_RE.match(cells[c]):
+                    found.append("tab:%s:%s" % (cells[0].lower(), head[c].lower()))
+            j += 1
+    return found
 
 
 def _json_markers(text):
@@ -120,10 +151,11 @@ def markers(path, text):
     """The Approved/Decided records in a file, as comparable strings."""
     if not text:
         return []
+    text = fold(text)
     low = path.lower()
     if low.endswith((".csv", ".tsv")):
         return _csv_markers(text)
-    out = ["line:" + m.group(0).strip().lower() for m in MD_RE.finditer(text)]
+    out = ["line:" + " ".join(m.group(0).split()).lower() for m in MD_RE.finditer(text)] + _table_markers(text)
     if low.endswith((".json", ".yaml", ".yml")):
         js = _json_markers(text) if low.endswith(".json") else None
         out += js if js is not None else ["key:" + m.group(0).lower() for m in KEY_RE.finditer(text)]
@@ -206,9 +238,8 @@ def respond(data, reason):
     claude = data.get("hook_event_name") == "PreToolUse" or (
         "hook_event_name" not in data and str(data.get("tool_name", "")) in ("Write", "Edit", "MultiEdit", "NotebookEdit"))
     if reason is None:
-        out = {"decision": "allow"}
-        if claude:
-            out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow"}}
+        # Claude Code treats an explicit "allow" as pre-approval and skips the user's permission prompt, so say nothing.
+        out = {} if claude else {"decision": "allow"}
     elif claude:
         out = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "deny", "permissionDecisionReason": reason}}
     else:

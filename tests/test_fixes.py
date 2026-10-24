@@ -371,6 +371,32 @@ class TestGuardHook(TmpCase):
         out = self.call({"tool_name": "Write", "tool_input": {"file_path": link, "content": "line_id,status\nL1,Approved\n"}})
         self.assertTrue(self.denied(out))
 
+    def test_claude_code_allow_says_nothing_so_the_users_own_prompt_still_applies(self):
+        out = self.call({"hook_event_name": "PreToolUse", "tool_name": "Write", "tool_input": {"file_path": "/etc/passwd", "content": "x"}})
+        self.assertEqual(out, {})
+        out = self.call({"hook_event_name": "PreToolUse", "tool_name": "Write", "tool_input": {"file_path": "workspace/outputs/x.md", "content": "Status: Draft"}})
+        self.assertEqual(out, {})
+
+    def test_exception_log_table_row_and_other_layouts_are_denied(self):
+        table = ("| Date | Request | Account | Status |\n|---|---|---|---|\n| 2026-10-01 | R1 | Acme | Approved |\n")
+        cases = {
+            "workspace/outputs/exception-log.md": [table, "| Outcome |\n|---|\n| Approved |\n", "Status:\nApproved\n", "Council decision: Approved\n",
+                                                   "Status:\u00a0Approved\n", "Status\uff1a Approved\n", "Status: Appro\u200bved\n", "Status: \uff21pproved\n"],
+            "workspace/outputs/x.yaml": ["approved: true\n", "status: approved\n"],
+            "workspace/price-book/pb.csv": ["# note\n\nline_id,status,notes\nA,Approved,\"x; x; x; x; x; x; x; x; x; x\"\n",
+                                           "line_id,status,notes\nA,Approved,\"a|b|c|d|e|f|g|h|i|j\"\n", "line_id,Decision\nL1,Approved\n"],
+        }
+        for path, contents in cases.items():
+            for content in contents:
+                out = self.call({"tool_name": "Write", "tool_input": {"file_path": path, "content": content}})
+                self.assertTrue(self.denied(out), (path, content))
+
+    def test_ordinary_drafting_phrases_are_not_blocked(self):
+        for content in ("Status: Draft (approved for review only)\n", "Not approved\n", "Unapproved\n", "Approval pending\n",
+                        "| Status |\n|---|\n| Not approved |\n", "**Decision and owner:** Raise the tier / Pricing Council\n"):
+            out = self.call({"tool_name": "Write", "tool_input": {"file_path": "workspace/outputs/x.md", "content": content}})
+            self.assertFalse(self.denied(out), content)
+
     def test_draft_and_proposed_are_allowed(self):
         out = self.call({"tool_name": "Write", "tool_input": {"file_path": "workspace/outputs/x.md", "content": "Status: Draft\nStatus: For decision\n"}})
         self.assertFalse(self.denied(out))
@@ -801,6 +827,142 @@ class TestSmallGuards(TmpCase):
         r = run(os.path.join(SK, "data-product-valuation", "scripts", "valuation.py"), "--in", p)
         self.assertEqual(r.returncode, 2)
         self.assertIn("currency", r.stderr)
+
+
+class TestSecondRoundFindings(TmpCase):
+    CHECK = os.path.join(SK, "price-book-builder", "scripts", "check_price_book.py")
+    EXAMPLE = os.path.join(SK, "price-book-builder", "examples", "price-book-example.csv")
+    IMPORT = os.path.join(SK, "price-book-import", "scripts", "import_price_book.py")
+    RIGHTS = os.path.join(SK, "rights-handoff", "scripts", "rights_list.py")
+    TRIAGE = os.path.join(SK, "deal-desk-triage", "scripts", "triage_rank.py")
+
+    def check(self, mutate, mode="release"):
+        with open(self.EXAMPLE, newline="") as fh:
+            rd = csv.DictReader(fh)
+            rows, fields = list(rd), rd.fieldnames
+        mutate(rows)
+        p = self.path("pb.csv")
+        with open(p, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fields)
+            w.writeheader()
+            w.writerows(rows)
+        return run(self.CHECK, "--pricebook", p, "--mode", mode)
+
+    def test_keeping_terms_must_be_real_terms(self):
+        r = self.check(lambda rs: rs[3].update(conferred_right="ai_training", minimum_commitment="0", retention_term="none", audit_right="no"))
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("a real", r.stdout)
+
+    def test_right_basis_must_be_stated_in_release(self):
+        for basis in ("", "guess"):
+            r = self.check(lambda rs, b=basis: rs[0].update(right_basis=b))
+            self.assertEqual(r.returncode, 1, basis)
+            self.assertIn("right_basis", r.stdout)
+
+    def test_unit_currency_and_mixed_currency(self):
+        self.assertIn("unit is blank", self.check(lambda rs: rs[0].update(unit="")).stdout)
+        self.assertIn("three-letter code", self.check(lambda rs: rs[0].update(currency="$")).stdout)
+        r = self.check(lambda rs: rs[1].update(product_id=rs[0]["product_id"], currency="EUR"))
+        self.assertIn("several currencies", r.stdout)
+
+    def test_id_case_and_tier_model_mismatch(self):
+        def dup(rs):
+            rs[1].update({k: rs[0][k] for k in rs[0] if k not in ("line_id",)})
+            rs[1]["line_id"] = rs[0]["line_id"].lower()
+        self.assertIn("duplicated", self.check(dup).stdout)
+
+        def models(rs):
+            a, b = dict(rs[0]), dict(rs[0])
+            a.update(line_id="M1", tier_min="1", tier_max="10", list_price="5", tier_model="")
+            b.update(line_id="M2", tier_min="11", tier_max="", list_price="4", tier_model="graduated")
+            del rs[:]
+            rs.extend([a, b])
+        self.assertIn("disagree on tier_model", self.check(models).stdout)
+
+    def test_zero_led_comma_number_is_not_thousands(self):
+        r = self.check(lambda rs: rs[0].update(list_price="0,500"), mode="strategy")
+        self.assertIn("decimal comma", r.stdout)
+
+    def test_importer_reads_every_currency_prefix_and_keeps_unpriced_data_rows(self):
+        src = self.path("in.csv")
+        with open(src, "w", encoding="utf-8") as fh:
+            fh.write("Product,Category,Type,Unit,Band,Price,Floor,License Type\n"
+                     "Deriv Feed,Data,Data License,per year,all,CAD 4.00,,Derivative Data Product\n"
+                     "Yen API,API,api,per call,all,\u00a5500,,\n"
+                     "Quote Feed,Data,Data License,per year,all,call us,,Derivative Data Product\n")
+        r = run(self.IMPORT, "--in", src, "--out-dir", self.path("o"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("WARNING", r.stdout)
+        with open(self.path("o", "price_book.csv"), newline="", encoding="utf-8") as fh:
+            book = {b["product_id"]: b for b in csv.DictReader(fh)}
+        self.assertEqual((book["Deriv Feed"]["currency"], book["Yen API"]["currency"]), ("CAD", "JPY"))
+        with open(self.path("o", "product_rights_handoff.csv"), newline="", encoding="utf-8") as fh:
+            hand = {h["product_id"] for h in csv.DictReader(fh)}
+        self.assertIn("Quote Feed", hand)
+
+    def test_answers_with_other_spelling_match_and_orphans_are_reported(self):
+        pb = self.path("pb.csv")
+        with open(pb, "w") as fh:
+            fh.write("line_id,product_id,product_type,conferred_right\nL1,P2,api_access,internal_use\n")
+        ans = self.path("a.csv")
+        with open(ans, "w") as fh:
+            fh.write("product_id,conferred_right,answer,date,who\nP2,Internal_Use,Yes,2026-10-01,PM\nP9,internal_use,No,2026-10-01,PM\n")
+        r = run(self.RIGHTS, "--pricebook", pb, "--answers", ans)
+        self.assertIn("| Yes |", r.stdout)
+        self.assertIn("P9 / internal_use", r.stdout)
+
+    def triage(self, body, *extra):
+        p = self.path("r.csv")
+        with open(p, "w") as fh:
+            fh.write("request_id,account,product,request_type,tcv,requested_discount_pct,received,due,anchor_deal\n" + body)
+        return run(self.TRIAGE, "--in", p, "--today", "2026-10-24", *extra)
+
+    def test_us_spelling_fraction_discount_and_odd_anchor(self):
+        r = self.triage("R-1,A,F,data_license,1000,30,2026-10-20,2026-10-30,\n", "--band-pct", "10")
+        self.assertIn("data-license-pricing", r.stdout)
+        r = self.triage("R-1,A,F,standard,1000,0.25,2026-10-20,2026-10-30,\n", "--band-pct", "10")
+        self.assertIn("fraction", r.stdout)
+        self.assertIn("1 not ranked", r.stdout)
+        r = self.triage("R-1,A,F,standard,1000,7,2026-10-20,2026-10-30,GDS\n", "--band-pct", "10")
+        self.assertIn("account-price-fit", r.stdout)
+        r = self.triage("R-1,A,F,standard,1000,\"7,5\",2026-10-20,2026-10-30,\n", "--band-pct", "10")
+        self.assertIn("not ranked", r.stdout)
+
+    def test_company_pack_and_symlinked_sources_dir(self):
+        inst = self.path("inst")
+        self.assertEqual(pdos(ROOT, "new-instance", inst, "--client", "Test Co").returncode, 0)
+        secret = self.path("outside.csv")
+        with open(secret, "w") as fh:
+            fh.write("a,b\nZZZ-OUTSIDE,1\n")
+        pbd = os.path.join(inst, "workspace", "price-book")
+        os.makedirs(pbd, exist_ok=True)
+        os.symlink(secret, os.path.join(pbd, "leak.csv"))
+        r = inst_pdos(inst, "notebook-pack", "--company")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        base = os.path.join(inst, "workspace", "outputs", "notebook-packs", "company-playbook", "sources")
+        for f in os.listdir(base):
+            self.assertNotIn("ZZZ-OUTSIDE", read(os.path.join(base, f)))
+        # a pack folder whose sources/ is a link must not be cleared through the link
+        victim = self.path("victim")
+        os.makedirs(victim)
+        with open(os.path.join(victim, "important.md"), "w") as fh:
+            fh.write("keep\n")
+        out = os.path.join(inst, "workspace", "outputs", "linked")
+        os.makedirs(out)
+        with open(os.path.join(out, ".pdos-notebook-pack"), "w") as fh:
+            fh.write("x")
+        os.symlink(victim, os.path.join(out, "sources"))
+        r = inst_pdos(inst, "notebook-pack", "--company", "--out", out)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertTrue(os.path.isfile(os.path.join(victim, "important.md")))
+
+    def test_markdown_table_status_fails_lint(self):
+        p = self.path("o.md")
+        with open(p, "w") as fh:
+            fh.write("**Answer:** x\n**Decision and owner:** y / z\nStatus: Draft   Handling: Internal   Date: 2026-10-24\n\n| a | Status |\n|---|---|\n| p | Approved |\n")
+        r = pdos(ROOT, "lint", p)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("OL004", r.stdout + r.stderr)
 
 
 if __name__ == "__main__":

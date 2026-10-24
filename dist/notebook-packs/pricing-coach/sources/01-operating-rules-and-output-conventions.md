@@ -35,7 +35,7 @@ Usage-pattern and machine-traffic signals are always "usage pattern to confirm w
 | Rule | How it is checked |
 |---|---|
 | 1, 2 | `pdos.py lint` on the output file; eval rubric |
-| 3 | lint: no number in a table without a tag; script name and inputs shown |
+| 3 | lint warns when numbers appear and no F, I, A or U tag is used anywhere; script name and inputs shown |
 | 4 | lint: Handling line present |
 | 5 | lint: handoff section has four parts when present |
 | 6, 10 | lint: Status is Draft or For decision (Approved and Decided are errors); the guard hook blocks adding either to a pricing artifact |

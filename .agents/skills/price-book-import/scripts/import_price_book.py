@@ -71,6 +71,10 @@ TYPE_RULES = [  # (type, regex on lowercase text, reason)
 ]
 
 
+CCY_WORDS = {"usd": "USD", "us$": "USD", "eur": "EUR", "gbp": "GBP", "cad": "CAD", "aud": "AUD", "chf": "CHF", "jpy": "JPY",
+             "inr": "INR", "cny": "CNY", "sgd": "SGD", "aed": "AED", "€": "EUR", "£": "GBP", "¥": "JPY"}
+
+
 def norm(s):
     return re.sub(r"[^a-z0-9#() ]+", " ", str(s).lower()).strip()
 
@@ -81,8 +85,11 @@ def money(v):
     s = str(v).strip()
     if s == "" or s.lower() in ("n/a", "na", "-", "tbd", "none", "null"):
         return None
-    s = re.sub(r"(?i)\b(usd|eur|gbp|us\$)\b", "", s)
-    s = s.replace("$", "").replace("€", "").replace("£", "").strip()
+    s = re.sub(r"(?i)\bus\$", "", s)
+    s = re.sub(r"(?i)\b(%s)\b" % "|".join(w for w in CCY_WORDS if w.isalpha()), "", s)
+    for sym in ("$", "€", "£", "¥"):
+        s = s.replace(sym, "")
+    s = s.strip()
     if re.search(r"\d,\d{1,2}$", s):
         return None  # "0,05" is a decimal comma in some locales and a thousands error in others: do not guess
     s = s.replace(",", "")
@@ -92,8 +99,6 @@ def money(v):
     return float(m.group(1)) * {"": 1, "k": 1e3, "m": 1e6, "b": 1e9}[(m.group(2) or "").lower()]
 
 
-CCY_WORDS = {"usd": "USD", "us$": "USD", "eur": "EUR", "gbp": "GBP", "cad": "CAD", "aud": "AUD", "chf": "CHF", "jpy": "JPY",
-             "inr": "INR", "cny": "CNY", "sgd": "SGD", "aed": "AED", "€": "EUR", "£": "GBP", "¥": "JPY"}
 RIGHTS = ["internal_use", "internal_analytics_shared_outputs", "display_to_third_parties", "redistribution_resale",
           "derivative_data_product", "ai_training", "ai_fine_tuning", "ai_retrieval_grounding", "ai_evaluation"]
 PRODUCT_TYPES = ("data_license", "api_access", "software", "service", "other")
@@ -323,6 +328,7 @@ def main():
         sys.exit(f"Could not find a product column. Headers seen: {headers}. Use --map to name it.")
 
     issues, assumptions = [], []
+    skipped = []   # data or API rows with no usable price: no price line, but still on the rights hand-off
     out, last_product = [], {}
     fill_down = ["product_id", "product_name", "product_family", "description", "unit", "term_months",
                  "annual_revenue", "customers", "currency"]
@@ -350,8 +356,16 @@ def main():
             if fld in mapping and bad_money(rec.get(fld)):
                 issues.append(f"Row {ri} ({rec.get('product_id','?')}): {fld} {rec.get(fld)!r} could not be read as a number (decimal commas and trailing text are not guessed); left blank")
         lp = money(rec.get("list_price"))
+        if re.search(r"\d\.\d{3}$", str(rec.get("list_price") or "").strip()) and cell_currency(rec.get("list_price")) not in (None, "USD"):
+            issues.append(f"Row {ri} ({rec.get('product_id','?')}): price {rec.get('list_price')!r} ends in a point and three digits; if the point is a thousands separator the price is wrong by a factor of 1,000. Check the source")
         if lp is None:
-            issues.append(f"Row {ri} ({rec.get('product_id','?')}): no usable list price {rec.get('list_price')!r}; row skipped")
+            issues.append(f"Row {ri} ({rec.get('product_id','?')}): no usable list price {rec.get('list_price')!r}; no price line written")
+            sname = rec.get("product_name") or rec.get("product_id")
+            sptype, _, _ = classify(sname, rec.get("product_family"), rec.get("description"), rec.get("unit"),
+                                    forced_types.get(sname) or forced_types.get(rec.get("product_id")) or canon_type(rec.get("product_type")) or None)
+            if sptype in SCOPE_TYPES:
+                sright = forced_rights.get(sname) or forced_rights.get(rec.get("product_id")) or canon_right(rec.get("conferred_right")) or ""
+                skipped.append((rec.get("product_id") or slug(sname), sname, sptype, sright))
             continue
         fp = money(rec.get("floor_price")) if "floor_price" in mapping else None
         if "tier_range" in mapping:
@@ -471,6 +485,8 @@ def main():
         h["lines"] += 1
         h["rev"] += float(o["annual_revenue"] or 0)
         h["cust"] += int(o["customers"] or 0)
+    for pid, name, ptype, right in skipped:
+        hand.setdefault((pid, right), {"name": name, "type": ptype, "rev": 0.0, "cust": 0, "lines": 0})
     has_rev = any(h["rev"] for h in hand.values())
     ranked = sorted(hand.items(), key=lambda kv: (-(kv[1]["rev"] if has_rev else kv[1]["lines"]), kv[0]))
     with open(od / "product_rights_handoff.csv", "w", newline="", encoding="utf-8") as f:
@@ -529,6 +545,9 @@ def main():
     print(f"Read {n_data_rows} rows, wrote {len(out)} price lines, {len(hand)} data or API products for the rights hand-off to {od}")
     print(f"Product types: " + ", ".join(f"{t} {len(v)}" for t, v in sorted(by_type.items())))
     print(f"Floor price missing on {len(missing_floor)} lines; {len(issues)} import issues")
+    if skipped or any("no price line written" in i for i in issues):
+        n_skip = sum(1 for i in issues if "no price line written" in i)
+        print(f"WARNING: {n_skip} source row(s) had no usable price and produced no price line ({len(skipped)} data or API product(s) among them were still added to the rights hand-off). See Issues in import_report.md.")
 
 
 if __name__ == "__main__":

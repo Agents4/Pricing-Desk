@@ -2,7 +2,7 @@
 
 An operating system for the pricing desk of a travel-technology (GDS) company. It prices API access, premium software, services and data products, with proven frameworks, a calendar of rhythms and 28 skills. Prices, customers and agreements in the examples are invented.
 
-The desk prices what the customer is **granted**. For data and API lines each price states the right it covers. Whether we hold that right is the product manager's call, assessed in the separate **Rights Desk** package (Agents4/Rights-Desk). The two meet at one hand-off list (`product_rights_handoff.csv`).
+The desk prices what the customer is **granted**. For data and API lines each price states the right it covers. Whether we hold that right is the product manager's call, assessed in the separate **Rights Desk** package (Agents4/data-rights). The two meet at one hand-off list (`product_rights_handoff.csv`).
 
 Company-specific values (Council, approval thresholds, discount bands, margin floors, notice terms, systems, the hand-off route) live only in the company's context library, filled by `pd-setup`. The product ships no company threshold, band, floor, margin, window, currency or term: scripts stop and say what is missing rather than fill one in. Blank means Unknown. Two analysis conveniences remain and are labelled in the output: equal weights when no weighting is supplied, and the sizes of the sensitivity tests in the price corridor (overridable with a `sensitivity` block).
 

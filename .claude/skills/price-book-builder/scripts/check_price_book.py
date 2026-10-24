@@ -76,7 +76,15 @@ def blank(v):
     return v is None or str(v).strip() == "" or str(v).strip().lower() in ("unknown", "tbd", "n/a")
 
 
-THOUSANDS = re.compile(r"^-?\d{1,3}(,\d{3})+(\.\d+)?$")
+# A keeping right needs a real commitment, retention term and audit: "none", "no" and "0" are not terms.
+EMPTY_TERMS = ("none", "no", "0", "0.0", "-", "nil", "null", "false", "na")
+
+
+def empty_term(v):
+    return blank(v) or str(v).strip().lower() in EMPTY_TERMS
+
+
+THOUSANDS = re.compile(r"^-?[1-9]\d{0,2}(,\d{3})+(\.\d+)?$")
 
 
 def num(value, line, field, issues):
@@ -156,7 +164,8 @@ def main():
         if any(v is None for k, v in row.items() if k is not None):
             issues.append(("E", lid, f"file line {n} has fewer cells than the header"))
         normalize(row)
-        pid = get(row, "product_id")
+        row["product_id"] = get(row, "product_id")
+        pid = get(row, "product_id").lower()
         if pid == "":
             issues.append(("E", lid, "product_id is blank; tiers and rights cannot be grouped"))
         cr = get(row, "conferred_right") or get(row, "use_right")
@@ -168,9 +177,9 @@ def main():
             issues.append(("E" if release else "W", lid, "product_type is blank; the granted-right gate cannot be applied. Set it (data_license, api_access, software, service, other)"))
         if get(row, "line_id") == "":
             issues.append(("E", lid, "line_id is blank"))
-        elif get(row, "line_id") in seen_ids:
-            issues.append(("E", lid, "line_id is duplicated"))
-        seen_ids.add(get(row, "line_id"))
+        elif get(row, "line_id").lower() in seen_ids:
+            issues.append(("E", lid, "line_id is duplicated (case is ignored)"))
+        seen_ids.add(get(row, "line_id").lower())
         if get(row, "currency") == "":
             issues.append(("E", lid, "currency is blank"))
         if get(row, "term_months") == "":
@@ -195,15 +204,21 @@ def main():
         if cr and cr not in RIGHTS:
             issues.append(("E" if release or ptype in SCOPE_TYPES else "W", lid, f"conferred_right {cr!r} is not one of the nine rights: {', '.join(RIGHTS)}"))
         basis = get(row, "right_basis").lower()
-        if cr and basis in ("inferred", "assumed"):
-            issues.append(("E" if release else "W", lid, f"conferred_right {cr} is {basis}, not stated. Confirm it from the contract or product definition and set right_basis to stated"))
+        if cr and ptype in SCOPE_TYPES and basis != "stated":
+            what = basis if basis else "blank"
+            issues.append(("E" if release else "W", lid, f"right_basis is {what}, not stated, for conferred_right {cr}. Confirm it from the contract or product definition and set right_basis to stated"))
+        if get(row, "unit") == "":
+            issues.append(("E" if release else "W", lid, "unit is blank: say what the price is per"))
+        ccy = get(row, "currency")
+        if ccy and not re.match(r"^[A-Z]{3}$", ccy):
+            issues.append(("E", lid, f"currency {ccy!r} is not a three-letter code such as USD"))
         model = get(row, "tier_model")
         if model and model not in ("all_units", "graduated"):
             issues.append(("E" if release else "W", lid, f"tier_model {model!r} is not all_units or graduated; the volume-cliff check cannot be applied"))
         if cr in KEEPING_RIGHTS and ptype in SCOPE_TYPES:
-            miss_terms = [f for f in TERM_FIELDS if blank(row.get(f))]
+            miss_terms = [f for f in TERM_FIELDS if empty_term(row.get(f))]
             if miss_terms:
-                issues.append(("E" if release else "W", lid, f"{cr} keeps or reuses data, so it needs {', '.join(miss_terms)} (operating rule 3)"))
+                issues.append(("E" if release else "W", lid, f"{cr} keeps or reuses data, so it needs a real {', '.join(miss_terms)} (blank, none, no and 0 do not count; operating rule 3)"))
         if tmin is not None and tmin < 0:
             issues.append(("E", lid, "tier_min is negative"))
         if tmin is not None and tmax is not None and tmax < tmin:
@@ -231,6 +246,9 @@ def main():
         r = p["row"]
         groups[(p["pid"], p["cr"], get(r, "delivery"), get(r, "unit"), get(r, "currency"), get(r, "term_months"))].append(p)
     for items in groups.values():
+        models = {get(i["row"], "tier_model") for i in items}
+        if len(items) > 1 and len(models) > 1:
+            issues.append(("E" if release else "W", items[0]["lid"] + " ...", "tiers of one product disagree on tier_model (" + ", ".join(sorted(m or "(blank)" for m in models)) + "); how they bill is Unknown"))
         items = [i for i in items if i["tmin"] is not None]
         items.sort(key=lambda i: i["tmin"])
         for a, b in zip(items, items[1:]):
@@ -267,6 +285,12 @@ def main():
     currencies = {get(p["row"], "currency") for p in parsed}
     if len(currencies) > 1:
         issues.append(("W", "price book", f"multiple currencies: {', '.join(sorted(c for c in currencies if c))}"))
+    ccy_by_pid = defaultdict(set)
+    for p in parsed:
+        ccy_by_pid[p["pid"]].add(get(p["row"], "currency"))
+    for pid, cs in ccy_by_pid.items():
+        if len(cs) > 1:
+            issues.append(("E" if release else "W", pid, f"one product is priced in several currencies ({', '.join(sorted(c or '(blank)' for c in cs))}); tiers cannot be compared"))
     types_by_pid = defaultdict(set)
     for p in parsed:
         types_by_pid[p["pid"]].add(p["ptype"])

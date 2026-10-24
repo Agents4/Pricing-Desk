@@ -10,5 +10,5 @@ Being taken one at a time with the owner. Company-specific values (Council, thre
 6. **Real past case for testing.** One real deal, one real quarter of realization data, and one real API access request (anonymized) to run through before release.
 7. **Analog verification.** Someone with web access to the vendor pricing pages (Amadeus Self-Service, Duffel, Google Maps Platform) to confirm and add them, or approve a later session to try again.
 8. **Wave order.** Confirm the wave 1 list or swap skills in and out.
-9. **Rights Desk repo.** Create `Agents4/Rights-Desk` so it can be pushed. Independent of this design.
+9. **Rights Desk repo.** Created as `Agents4/data-rights` (2026-10-24). Independent of this design.
 10. **PR #6.** Merge the rights split before the restructure starts? The design assumes yes.

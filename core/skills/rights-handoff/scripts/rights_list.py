@@ -74,7 +74,9 @@ def main():
     if a.answers:
         with open(a.answers, newline="", encoding="utf-8-sig") as fh:
             for r in csv.DictReader(fh):
-                answers[((r.get("product_id") or "").strip(), (r.get("conferred_right") or "").strip())] = r
+                acr = " ".join((r.get("conferred_right") or "").replace("_", " ").lower().split()).replace(" ", "_")
+                answers[((r.get("product_id") or "").strip(), acr)] = r
+    unmatched = [k for k in answers if k not in items]
     ranked = sorted(items.items(), key=lambda kv: (-kv[1]["rev"], kv[0]))
     rows = []
     for i, ((pid, cr), it) in enumerate(ranked, 1):
@@ -97,6 +99,8 @@ def main():
         out += ["", "Lines whose product_type is blank or not recognised cannot be classed as data, API or other, so they are NOT in the list above. Fix the type and rerun: " + ", ".join(str(x) for x in unknown_type)]
     if missing_right:
         out += ["", "Data or API lines with no conferred_right (cannot be listed until the granted right is stated): " + ", ".join(missing_right)]
+    if unmatched:
+        out += ["", "Answers on file that match no product and right in this price book (check spelling of product_id and conferred_right; the answer is NOT applied): " + ", ".join("%s / %s" % k for k in unmatched)]
     if bad_right:
         out += ["", "Data or API lines whose conferred_right is not one of the nine rights (NOT in the list above; fix and rerun): " + ", ".join(bad_right)]
     if bad_number:

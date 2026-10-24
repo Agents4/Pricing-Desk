@@ -76,6 +76,10 @@ def lint_text(text: str, where: str) -> List[Issue]:
                 add("error", "OL007", "Handoff section is missing %r (rule 5)" % label)
     for line_no, header, rows in _tables(lines):
         h = [c.lower() for c in header]
+        for ci, name in enumerate(h):
+            if re.search(r"status|approval|decision|outcome", name):
+                if any(ci < len(r) and re.match(r"^\W*(council\s+)?(approved|decided)\b", r[ci], re.IGNORECASE) for r in rows):
+                    add("error", "OL004", "table at line %d has %s in its %r column; only the Council records that (rule 10)" % (line_no, "Approved or Decided", header[ci]))
         if any("source url" in c for c in h):
             idx = [i for i, c in enumerate(h) if "source url" in c][0]
             didx = [i for i, c in enumerate(h) if "access" in c]

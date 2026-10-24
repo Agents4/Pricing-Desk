@@ -123,6 +123,16 @@ def doctor(root: str) -> int:
                     orphan.append(f)
         (bad if orphan else ok)("hand-written commands each name a skill" if not orphan else "commands naming no skill: " + ", ".join(orphan))
 
+    cs = os.path.join(root, ".claude", "settings.json")
+    if os.path.isfile(cs):
+        txt = open(cs, encoding="utf-8").read()
+        if "guard_pricing_files" in txt:
+            ok("Claude Code guard hook is wired in .claude/settings.json")
+        else:
+            note(".claude/settings.json exists but does not run the guard hook (guard_pricing_files.py): Approved statuses are not blocked in Claude Code. Merge the hooks block from core/hooks/claude-settings.json")
+    else:
+        note("no .claude/settings.json: the guard hook is not wired for Claude Code (run build)")
+
     a = os.path.join(root, "AGENTS.md")
     if os.path.isfile(a):
         n = len(open(a, encoding="utf-8").read().splitlines())

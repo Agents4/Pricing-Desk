@@ -72,6 +72,8 @@ def prepare_out(out_dir: str) -> None:
         if not os.path.isfile(os.path.join(out_dir, PACK_MARK)):
             raise SystemExit("%s exists, is not empty and is not a notebook pack made by this tool; choose another --out" % out_dir)
         src = os.path.join(out_dir, "sources")
+        if os.path.islink(src) or os.path.islink(out_dir):
+            raise SystemExit("%s/sources is a link; refusing to clear what it points to" % out_dir)
         if os.path.isdir(src):
             for f in os.listdir(src):
                 if f.endswith(".md"):
@@ -188,6 +190,8 @@ def build_company_pack(root: str, core_dir: str, out_dir: str) -> List[Tuple[str
     cl = os.path.join(root, "workspace", "context-library")
     if not os.path.isdir(cl):
         raise SystemExit("workspace/context-library not found")
+    if not _inside_real(cl, os.path.join(root, "workspace")):
+        raise SystemExit("workspace/context-library leads outside workspace (a link?); refusing to pack it")
     rel = lambda p, b: os.path.relpath(p, b)
     sources = []
     top = [os.path.join(cl, f) for f in sorted(os.listdir(cl)) if f.endswith(".md") and _inside_real(os.path.join(cl, f), cl)]
@@ -201,12 +205,12 @@ def build_company_pack(root: str, core_dir: str, out_dir: str) -> List[Tuple[str
     tables = []
     if os.path.isdir(pb):
         for f in sorted(os.listdir(pb)):
-            if f.endswith(".csv"):
+            if f.endswith(".csv") and _inside_real(os.path.join(pb, f), pb):
                 tables.append((f, _csv_table(os.path.join(pb, f))))
     if tables:
         sources.append(("Price book", assemble("Price book (tables from CSV)", tables)))
     dl = os.path.join(root, "workspace", "outputs", "decision-log.md")
-    if os.path.isfile(dl):
+    if os.path.isfile(dl) and _inside_real(dl, os.path.join(root, "workspace", "outputs")):
         sources.append(("Decision log", assemble("Decision log", [("decision-log.md", _read(dl))])))
     if not sources:
         raise SystemExit("nothing to pack in workspace/")
@@ -229,6 +233,8 @@ def build_account_pack(root: str, core_dir: str, account: str, out_dir: str) -> 
     ad = os.path.join(root, "workspace", "accounts", account)
     if not os.path.isdir(ad):
         raise SystemExit("account folder not found: workspace/accounts/%s" % account)
+    if not _inside_real(ad, os.path.join(root, "workspace", "accounts")):
+        raise SystemExit("workspace/accounts/%s leads outside workspace/accounts (a link?); refusing to pack it" % account)
     files = _md_files(ad)
     if not files:
         raise SystemExit("no markdown files in workspace/accounts/%s" % account)

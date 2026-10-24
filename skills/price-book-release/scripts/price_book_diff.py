@@ -33,7 +33,7 @@ def load(p):
     for n, r in enumerate(rows, 2):
         if "use_right" in r and "conferred_right" not in r:
             r["conferred_right"] = r["use_right"]   # legacy column name, same meaning
-        k = (r.get("line_id") or "").strip()
+        k = (r.get("line_id") or "").strip().lower()
         if not k:
             blank.append(n)
             continue
@@ -80,7 +80,7 @@ def main():
             pct = ""
             if fld in ("list_price", "floor_price") and num(o) and num(n) is not None:
                 pct = "%+.1f%%" % ((num(n) - num(o)) / num(o) * 100)
-            changes.append((k, new[k].get("product_id", ""), fld, o or "(blank)", n or "(blank)", pct))
+            changes.append((new[k].get("line_id", k).strip(), new[k].get("product_id", ""), fld, o or "(blank)", n or "(blank)", pct))
     out = ["Price book change log: %d line(s) added, %d removed, %d field change(s) on %d line(s)." % (
         len(added), len(removed), len(changes), len({c[0] for c in changes})), ""]
     if changes:
@@ -88,9 +88,9 @@ def main():
         out += ["| %s | %s | %s | %s | %s | %s |" % c for c in changes]
         out.append("")
     if added:
-        out += ["Added: " + ", ".join("%s (%s)" % (k, new[k].get("product_id", "")) for k in added), ""]
+        out += ["Added: " + ", ".join("%s (%s)" % (new[k].get("line_id", k).strip(), new[k].get("product_id", "")) for k in added), ""]
     if removed:
-        out += ["Removed: " + ", ".join("%s (%s)" % (k, old[k].get("product_id", "")) for k in removed), ""]
+        out += ["Removed: " + ", ".join("%s (%s)" % (old[k].get("line_id", k).strip(), old[k].get("product_id", "")) for k in removed), ""]
     out.append("Computed from the two files (F).")
     text = "\n".join(out) + "\n"
     sys.stdout.write(text)
