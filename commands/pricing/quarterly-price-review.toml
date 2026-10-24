@@ -1,0 +1,8 @@
+description = "Run the quarterly review of every product line against value, market and realization, compare earlier price changes with their forecast, refresh the analog l..."
+prompt = """
+Use the quarterly-price-review skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

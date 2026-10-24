@@ -1,0 +1,9 @@
+description = "Classify and price a customer data licence request (API access requests go to the api-access-request skill)"
+prompt = """
+Use the data-license-pricing skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop.
+If the request is for new or expanded API access, use the api-access-request skill instead and call this one only to price the wider right. Classify the right the customer wants. If the purpose is to keep, collect or rebuild data or feed AI, price it as a data right, not at the booking rate. Then write the question for the product manager about whether we may grant that right (rights-handoff).
+"""

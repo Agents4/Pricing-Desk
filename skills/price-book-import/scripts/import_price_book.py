@@ -36,7 +36,7 @@ import sys
 from collections import OrderedDict, defaultdict
 from pathlib import Path
 
-STANDARD = ["line_id", "product_id", "product_type", "product_name", "product_family", "conferred_right",
+STANDARD = ["line_id", "product_id", "product_type", "product_name", "product_family", "conferred_right", "right_basis",
             "delivery", "unit", "tier_min", "tier_max", "list_price", "floor_price", "currency", "term_months",
             "tier_model", "status", "version", "annual_revenue", "customers", "price_period",
             "source_row", "notes"]
@@ -82,9 +82,20 @@ def money(v):
     if s == "" or s.lower() in ("n/a", "na", "-", "tbd", "none", "null"):
         return None
     s = re.sub(r"(?i)\b(usd|eur|gbp|us\$)\b", "", s)
-    s = s.replace("$", "").replace("€", "").replace("£", "").replace(",", "").strip()
-    m = re.match(r"^-?\d+(\.\d+)?", s)
-    return float(m.group(0)) if m else None
+    s = s.replace("$", "").replace("€", "").replace("£", "").strip()
+    if re.search(r"\d,\d{1,2}$", s):
+        return None  # "0,05" is a decimal comma in some locales and a thousands error in others: do not guess
+    s = s.replace(",", "")
+    m = re.match(r"^(-?\d+(?:\.\d+)?)\s*([kmb])?$", s, re.IGNORECASE)
+    if not m:
+        return None  # trailing words or unknown suffixes are not read as a number
+    return float(m.group(1)) * {"": 1, "k": 1e3, "m": 1e6, "b": 1e9}[(m.group(2) or "").lower()]
+
+
+def bad_money(v):
+    """True when a non-blank cell could not be read as a number (so the caller can report it)."""
+    s = "" if v is None else str(v).strip()
+    return s != "" and s.lower() not in ("n/a", "na", "-", "tbd", "none", "null") and money(v) is None
 
 
 def qty(tok):
@@ -138,7 +149,11 @@ def read_rows(path, sheet):
         ws = wb[sheet] if sheet else wb[wb.sheetnames[0]]
         raw = [list(r) for r in ws.iter_rows(values_only=True)]
     else:
-        with open(p, newline="", encoding="utf-8-sig") as f:
+        try:
+            f = open(p, newline="", encoding="utf-8-sig")
+        except OSError as e:
+            sys.exit("cannot read %s: %s" % (p, e.strerror or e))
+        with f:
             raw = [r for r in csv.reader(f)]
     return raw
 
@@ -278,7 +293,10 @@ def main():
             continue
         g = lambda k: cells[mapping[k]] if k in mapping and mapping[k] < len(cells) else ""
         rec = {k: g(k) for k in mapping}
-        # fill down blanks for product-level columns when a tier row leaves them empty
+        # fill down blanks for product-level columns when a tier row leaves them empty, but only within the
+        # same product: a new product id resets what was carried
+        if rec.get("product_id") and rec["product_id"] != last_product.get("product_id"):
+            last_product = {}
         for k in fill_down:
             if k in mapping:
                 if rec.get(k, "") == "" and last_product.get(k):
@@ -288,6 +306,9 @@ def main():
         if not rec.get("product_id") and not money(rec.get("list_price")):
             continue  # section or blank line
         n_data_rows += 1
+        for fld in ("floor_price", "annual_revenue", "customers", "tier_min", "tier_max"):
+            if fld in mapping and bad_money(rec.get(fld)):
+                issues.append(f"Row {ri} ({rec.get('product_id','?')}): {fld} {rec.get(fld)!r} could not be read as a number (decimal commas and trailing text are not guessed); left blank")
         lp = money(rec.get("list_price"))
         if lp is None:
             issues.append(f"Row {ri} ({rec.get('product_id','?')}): no usable list price {rec.get('list_price')!r}; row skipped")
@@ -318,14 +339,16 @@ def main():
         scoped = ptype in SCOPE_TYPES
         use_right = forced_rights.get(name) or forced_rights.get(rec.get("product_id")) or rec.get("conferred_right", "")
         ur_inferred = False
+        right_basis = "stated" if use_right else ""
         if not use_right and scoped:
             use_right = infer_conferred_right(f"{name} {rec.get('description','')}")
             ur_inferred = bool(use_right)
+            right_basis = "inferred" if use_right else ""
         if not scoped:
             use_right = ""
         out.append(OrderedDict(
             line_id="", product_id=rec.get("product_id") or slug(name), product_type=ptype, product_name=name,
-            product_family=rec.get("product_family", ""), conferred_right=use_right,
+            product_family=rec.get("product_family", ""), conferred_right=use_right, right_basis=right_basis,
             delivery=rec.get("delivery", ""), unit=rec.get("unit", ""),
             tier_min=int(tmin) if tmin is not None else "", tier_max=int(tmax) if tmax is not None else "",
             list_price=lp, floor_price="" if fp is None else fp, currency=rec.get("currency") or args.default_currency,

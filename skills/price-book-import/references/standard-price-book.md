@@ -9,7 +9,11 @@ One row per price line (one tier of one product, unit and term). CSV with a head
 | product_type | recommended | data_license, api_access, software, service, other |
 | product_name | no | Business name |
 | product_family | no | Family or category |
-| conferred_right | data and API lines | The right **granted to the customer** on this product: what they may do with the data or API responses. One of the nine rights (internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding, ai_evaluation). Blank means not stated; treat it as internal_use only. An older column named use_right is read as this one |
+| conferred_right | data and API lines | The right **granted to the customer** on this product: what they may do with the data or API responses. One of the nine rights (internal_use, internal_analytics_shared_outputs, display_to_third_parties, redistribution_resale, derivative_data_product, ai_training, ai_fine_tuning, ai_retrieval_grounding, ai_evaluation). Blank means not stated; treat it as internal_use only for pricing, and the checker warns (error in release mode). An older column named use_right is read as this one |
+| right_basis | data and API lines | How the right was decided: `stated` (from the contract or product definition), `inferred` or `assumed`. Anything but `stated` is a warning, and an error in release mode |
+| minimum_commitment | data licence lines | Minimum annual commitment for the right. Required for keeping or collecting data |
+| retention_term | lines that allow keeping responses | How long responses may be kept (days or a named term) |
+| audit_right | lines that allow keeping responses | Whether we may audit use (yes or no) |
 | delivery | no | API, file, feed, dashboard, or blank |
 | unit | yes | What the price is per (per 1,000 calls, per seat per year, per day) |
 | tier_min, tier_max | yes | First and last unit of the tier. tier_max blank on the last tier. Tiers must not overlap |

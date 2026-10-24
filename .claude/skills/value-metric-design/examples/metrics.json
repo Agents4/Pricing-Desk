@@ -1,0 +1,6 @@
+{"criteria": [{"name": "visible to the customer"}, {"name": "meterable by us"}, {"name": "scales with value received"}, {"name": "predictable for the customer"}, {"name": "hard to game"}],
+ "candidates": [
+  {"name": "per search call", "scores": {"visible to the customer": 5, "meterable by us": 5, "scales with value received": 2, "predictable for the customer": 3, "hard to game": 2}},
+  {"name": "per booking", "scores": {"visible to the customer": 5, "meterable by us": 4, "scales with value received": 4, "predictable for the customer": 3, "hard to game": 4}},
+  {"name": "look-to-book band with included allowance", "scores": {"visible to the customer": 3, "meterable by us": 4, "scales with value received": 4, "predictable for the customer": 4}}
+ ]}

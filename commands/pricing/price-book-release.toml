@@ -1,0 +1,8 @@
+description = "Release a price book for quoting. Runs the checker in release mode, writes the change log against the previous version, builds the customer notice calendar f..."
+prompt = """
+Use the price-book-release skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

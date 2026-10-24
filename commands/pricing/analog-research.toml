@@ -1,0 +1,8 @@
+description = "Research how similar products are priced, inside or outside travel, using public sources only. Finds analogs, records each with URL, access date, unit, metri..."
+prompt = """
+Use the analog-research skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

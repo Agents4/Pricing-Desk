@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "BeforeTool": [
+      {
+        "matcher": "write_file|replace",
+        "hooks": [
+          {
+            "type": "command",
+            "name": "pricing-desk-guard",
+            "description": "Blocks edits that add an Approved status to a price book or other pricing artifact",
+            "command": "python3 \"${extensionPath}${/}hooks${/}guard_pricing_files.py\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}

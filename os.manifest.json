@@ -1,0 +1,37 @@
+{
+  "manifest_version": 1,
+  "name": "Pricing Desk",
+  "slug": "pricing-desk",
+  "version": {"file": "VERSION"},
+  "rules_file": "AGENTS.md",
+  "extension": {
+    "name": "pricing-desk",
+    "command_namespace": "pricing",
+    "description": "Pricing Desk OS for a travel-technology (GDS) company: skills, rhythms and playbooks for API access, software, services and data products. Prices the scope granted to the customer. Rights held are assessed in the separate Rights Desk. Examples are invented."
+  },
+  "skills": {
+    "source": "core/skills",
+    "local": "local/skills",
+    "authoring_guide": "core/shared/skill-authoring.md",
+    "template": "core/skills/deal-desk-review/SKILL.md",
+    "naming": "lowercase letters, digits, single hyphens; folder name equals name; pd- prefix for system skills; 64 characters at most"
+  },
+  "commands": {
+    "validate": "python3 tools/pdos.py validate",
+    "build": "python3 tools/pdos.py build",
+    "doctor": "python3 tools/pdos.py doctor",
+    "evals": "evals/README.md"
+  },
+  "registries": [
+    {"file": "AGENTS.md", "check": "lists_skills", "update": "Add a row to the 'Route the request' table"},
+    {"file": "README.md", "check": "skill_count", "pattern": "\\b(\\d+) skills\\b", "update": "Update the skill counts"},
+    {"file": "CHANGELOG.md", "update": "Add a line under the Unreleased heading"}
+  ],
+  "generated": [
+    "skills", "commands", "agents", "hooks", "GEMINI.md", "gemini-extension.json",
+    ".claude/skills", ".agents/skills", "dist"
+  ],
+  "protect": ["workspace/", "local/"],
+  "evals": "evals/",
+  "platforms": ["gemini-cli", "gemini-app", "claude-code", "chat-only"]
+}

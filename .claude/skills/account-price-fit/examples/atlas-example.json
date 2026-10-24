@@ -1,0 +1,30 @@
+{
+  "account": "Atlas Travel (invented example)",
+  "currency": "USD",
+  "term_months": 36,
+  "inputs_basis": {
+    "anchor": "F: invented billing export, for the example only",
+    "addon": "F: invented price book line, for the example only",
+    "options": "A: typed by the rep, not yet in a contract"
+  },
+  "anchor": {"annual_revenue": 4000000, "annual_incentives_paid": 1800000, "annual_cost_to_serve": 600000,
+             "annual_list_value": 4200000},
+  "decline": {"annual_anchor_net": 1500000, "note": "invented: the account says it would move some bookings to a rival if declined"},
+  "addon": {"name": "Shopping Insights API", "unit": "1,000 calls", "product_type": "api_access",
+            "granted_right": "internal_use", "list_price": 12.0, "floor_price": 7.0, "annual_units": 50000, "unit_cost": 3.0},
+  "discount_band_pct": 15,
+  "account_discount_cap_pct": 12,
+  "escalation_path": "invented: the deal desk lead, then the Council chair",
+  "options": [
+    {"name": "Hold list", "price": 12.0, "incentive_change_annual": 0},
+    {"name": "Trade: 12% off for a 3-year commitment", "price": 10.56, "incentive_change_annual": 0,
+     "gets": [{"name": "36-month term", "annual_value": 90000, "basis": "invented catalog value"},
+              {"name": "annual minimum of 40,000 units", "annual_value": 30000, "basis": "invented catalog value"}]},
+    {"name": "Ramp with larger allowance", "price": 12.0, "included_units": 5000, "ramp": [0.5, 0.8, 1.0], "incentive_change_annual": 0,
+     "gets": [{"name": "conversion to list in year 3", "annual_value": 20000, "basis": "invented catalog value"},
+              {"name": "look-to-book ceiling in the contract"}]},
+    {"name": "Price ramp to list", "price_by_year": [9.6, 10.8, 12.0], "incentive_change_annual": 0,
+     "gets": ["36-month term"]},
+    {"name": "Deep cut, nothing back", "price": 8.0}
+  ]
+}

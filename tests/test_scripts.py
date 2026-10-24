@@ -1,0 +1,204 @@
+"""Tests for the calculation scripts inside skills. Each runs the script as a user would."""
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SK = os.path.join(ROOT, "core", "skills")
+
+
+def run(*args):
+    return subprocess.run([sys.executable, "-I"] + list(args), capture_output=True, text=True, cwd=ROOT)
+
+
+class TestHarvestScreen(unittest.TestCase):
+    csv = os.path.join(SK, "api-access-request", "examples", "keys.csv")
+    script = os.path.join(SK, "api-access-request", "scripts", "harvest_screen.py")
+    med = ["--segment-median", "TMC=120", "--segment-median", "OTA=150"]
+
+    def test_no_thresholds_flags_nothing(self):
+        r = run(self.script, "--in", self.csv, *self.med)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("no threshold given: ratios shown, nothing judged", r.stdout)
+        self.assertNotIn("pattern to confirm", r.stdout)
+        self.assertIn("Unknown (not run)", r.stdout)
+
+    def test_signals_flag_pattern(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--multiple", "3", "--distinct-ratio", "0.8")
+        self.assertIn("pattern to confirm with the account owner", r.stdout)
+        self.assertNotIn("possible data collection", r.stdout)
+
+    def test_zero_bookings_flagged_with_multiple(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--multiple", "5")
+        self.assertIn("searches with no bookings", r.stdout)
+
+    def test_customer_rollup_present(self):
+        r = run(self.script, "--in", self.csv, *self.med, "--distinct-ratio", "0.8")
+        self.assertIn("By customer", r.stdout)
+        self.assertIn("| Fern Labs (invented) | 2 |", r.stdout)
+
+    def test_missing_median_stops(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("no default", r.stderr)
+
+
+class TestTriage(unittest.TestCase):
+    csv = os.path.join(SK, "deal-desk-triage", "examples", "requests.csv")
+    script = os.path.join(SK, "deal-desk-triage", "scripts", "triage_rank.py")
+
+    def test_band_unknown_without_flag(self):
+        r = run(self.script, "--in", self.csv, "--today", "2026-10-24")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Unknown", r.stdout)
+
+    def test_overdue_first(self):
+        r = run(self.script, "--in", self.csv, "--today", "2026-10-24", "--band-pct", "15")
+        first = [l for l in r.stdout.splitlines() if l.startswith("| 1 |")][0]
+        self.assertIn("R-104", first)
+
+
+class TestAccountWaterfall(unittest.TestCase):
+    script = os.path.join(SK, "account-price-fit", "scripts", "account_waterfall.py")
+    ex = os.path.join(SK, "account-price-fit", "examples", "atlas-example.json")
+
+    def test_example_runs(self):
+        r = run(self.script, "--in", self.ex)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Hold list", r.stdout)
+
+    def test_missing_band_flagged(self):
+        d = json.load(open(self.ex))
+        d["discount_band_pct"] = None
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(d, f)
+        try:
+            r = run(self.script, "--in", f.name)
+        finally:
+            os.unlink(f.name)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Unknown", r.stdout)
+
+
+class TestWeeklyRoll(unittest.TestCase):
+    script = os.path.join(SK, "weekly-pricing-review", "scripts", "weekly_roll.py")
+    csv = os.path.join(SK, "weekly-pricing-review", "examples", "lines.csv")
+
+    def test_rate_and_prior(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("88.4%", r.stdout)
+        self.assertIn("prior 92.1%", r.stdout)
+        self.assertIn("Unlabeled", r.stdout)
+
+    def test_unknown_week_exits(self):
+        r = run(self.script, "--in", self.csv, "--week", "2020-01-06")
+        self.assertNotEqual(r.returncode, 0)
+
+
+class TestWinLoss(unittest.TestCase):
+    script = os.path.join(SK, "pricing-win-loss", "scripts", "winloss_tally.py")
+    csv = os.path.join(SK, "pricing-win-loss", "examples", "deals.csv")
+
+    def test_n_shown(self):
+        r = run(self.script, "--in", self.csv)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("won n=2", r.stdout)
+        self.assertIn("lost (n=2)", r.stdout)
+        self.assertIn("15.0%", r.stdout)
+
+
+
+class TestRelease(unittest.TestCase):
+    base = os.path.join(SK, "price-book-release")
+    diff = os.path.join(base, "scripts", "price_book_diff.py")
+    cal = os.path.join(base, "scripts", "notice_calendar.py")
+
+    def test_diff(self):
+        r = run(self.diff, "--old", os.path.join(self.base, "examples", "price-book-old.csv"),
+                "--new", os.path.join(self.base, "examples", "price-book-new.csv"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("+11.1%", r.stdout)
+        self.assertIn("Added: L007", r.stdout)
+
+    def test_calendar(self):
+        r = run(self.cal, "--in", os.path.join(self.base, "examples", "contracts.csv"), "--effective", "2027-01-01", "--today", "2026-10-24")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("passed 21 day(s) ago", r.stdout)
+        self.assertIn("protected through 2027-06-30", r.stdout)
+        self.assertIn("notice period Unknown", r.stdout)
+
+
+class TestRightsList(unittest.TestCase):
+    base = os.path.join(SK, "rights-handoff")
+    script = os.path.join(base, "scripts", "rights_list.py")
+    pb = os.path.join(SK, "price-book-release", "examples", "price-book-new.csv")
+
+    def test_open_and_answered(self):
+        r = run(self.script, "--pricebook", self.pb, "--answers", os.path.join(self.base, "examples", "rights_answers.csv"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("5 open, 1 with an answer on file", r.stdout)
+        self.assertIn("See rights pack entry 12", r.stdout)
+
+    def test_no_answers_all_open(self):
+        r = run(self.script, "--pricebook", self.pb)
+        self.assertIn("6 open", r.stdout)
+
+
+
+class TestResearchScripts(unittest.TestCase):
+    def test_analog_checker_seed_entries(self):
+        d = os.path.join(ROOT, "core", "scaffold", "workspace", "context-library", "analogs")
+        r = run(os.path.join(SK, "analog-research", "scripts", "check_analogs.py"), "--dir", d)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("0 incomplete", r.stdout)
+
+    def test_analog_checker_flags_missing(self):
+        with tempfile.TemporaryDirectory() as td:
+            open(os.path.join(td, "x.md"), "w").write("---\nname: x\n---\n")
+            r = run(os.path.join(SK, "analog-research", "scripts", "check_analogs.py"), "--dir", td)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("INCOMPLETE", r.stdout)
+
+    def test_scan_log(self):
+        s = os.path.join(SK, "competitive-price-scan")
+        r = run(os.path.join(s, "scripts", "check_scan_log.py"), "--in", os.path.join(s, "examples", "scan.csv"), "--today", "2026-10-24", "--max-age-days", "90")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("UNVERIFIED", r.stdout)
+        self.assertIn("STALE", r.stdout)
+        self.assertIn("1 ok, 1 stale, 1 unverified", r.stdout)
+
+    def test_scorecard_unknown_not_zero(self):
+        s = os.path.join(SK, "value-metric-design")
+        r = run(os.path.join(s, "scripts", "metric_scorecard.py"), "--in", os.path.join(s, "examples", "metrics.json"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("equal (assumption A", r.stdout)
+        self.assertIn("hard to game", r.stdout)
+
+    def test_valuation(self):
+        s = os.path.join(SK, "data-product-valuation")
+        r = run(os.path.join(s, "scripts", "valuation.py"), "--in", os.path.join(s, "examples", "input.json"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("2,100,000", r.stdout)
+        self.assertIn("1,100,000", r.stdout)
+        self.assertIn("1,492,111", r.stdout)
+
+    def test_valuation_skips_without_rate(self):
+        s = os.path.join(SK, "data-product-valuation")
+        d = json.load(open(os.path.join(s, "examples", "input.json")))
+        del d["income"]
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(d, f)
+        try:
+            r = run(os.path.join(s, "scripts", "valuation.py"), "--in", f.name)
+        finally:
+            os.unlink(f.name)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("Skipped: Income approach", r.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()

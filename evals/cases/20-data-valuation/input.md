@@ -1,0 +1,1 @@
+Value our Air Shopping Market Insights product. Build cost 1.2M, run cost 300k a year, three comparables we have are in the example file, and the buyer benefit we estimate is 600k a year. We have not agreed a discount rate.

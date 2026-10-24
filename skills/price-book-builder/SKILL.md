@@ -1,31 +1,49 @@
 ---
 name: price-book-builder
 description: Build and maintain the price book for any product the pricing desk prices (API access, software, services, data licences). Sets list prices, floors, tiers and terms from cost, past deals, willingness-to-pay evidence and benchmarks, states on each data and API line what the customer may do with it, and checks consistency. Use when creating or revising a price book, or after importing an existing one.
+compatibility: "Any Agent Skills client. Scripts need Python 3.8+; without a shell the skill works from pasted data and says the check was not run."
+metadata:
+  version: "1.1.0"
+  layer: pricing
+  last_reviewed: "2026-10-24"
+  includes: "shared/operating-rules.md, shared/capabilities.md, shared/output-conventions.md"
 ---
 
 # Price Book Builder
+
+Read `references/operating-rules.md` and `references/capabilities.md` first. Start every output with the header in `references/output-conventions.md`.
 
 Create list prices that the desk can quote without a custom study each time. Prices come from evidence. Every data and API line says what the customer may do with what they buy (the **granted right**). That scope is part of the product: the same volume sells at a different price for internal use, for keeping the data, or for reselling it. Read `references/granted-scope.md`, and for API lines `references/api-access-scope.md`.
 
 The desk assumes we hold the rights to grant what it prices. The product manager checks that separately with the rights pack. If an existing price book needs to be brought in first, use the `price-book-import` skill.
 
-## What this skill needs
+## When to use
 
-1. **Products and scope**: for each data or API product, what the customer receives and what they may do with it. If the scope is not known, price `internal_use` only and say so.
+- Creating or revising a price book for API access, software, services or data licences.
+- After an import, to set floors, tiers, terms and granted rights.
+- A price book must pass the checker before release.
+
+Not for: finding the prices (`data-price-setting`) or releasing the book (`price-book-release`).
+
+## Inputs
+
+Context library files read: `pricing-governance.md` (margin floors, bands), `product-catalog.md`. If a file still says `status: template`, treat its values as Unknown.
+
+1. **Products and scope**: for each data or API product, what the customer receives and what they may do with it. If the scope is not known, price `internal_use` only, set `right_basis` to `assumed` and say so.
 2. **Product attributes**: coverage, refresh frequency, history depth, delivery methods, volume, and number of current customers.
-3. **Cost data** if available: cost to produce, source fees owed to suppliers, cost to serve (delivery and support). Ask Finance for the margin floor per family.
+3. **Cost data** if available: cost to produce, source fees owed to suppliers, cost to serve (delivery and support). Take the margin floor per family from `pricing-governance.md` (on price, not on cost); Unknown if blank, so ask who sets it.
 4. **Existing prices**: past data deals, quotes, and renewals, with realized price, volume, term, and use.
 5. **Value evidence**: willingness-to-pay research, win and loss reasons, and customer value drivers (revenue enabled, cost avoided, time saved).
 6. **Benchmarks**: public price lists and published information only, with sources. Never use competitor information obtained directly from a competitor.
-7. **Goals and constraints**: penetration targets, strategic accounts, existing contract price protections.
+7. **Goals and constraints**: penetration targets and existing contract price protections. List prices are set without knowing any account; a strategic account's context moves a deal price only through the deal desk (`account-price-fit`), never the list (rule 13).
 
 If an input is missing, say what you cannot do without it and what you can do with assumptions that you label clearly.
 
-## Process
+## Procedure
 
 ### 1. Scope the price book
 
-List products and the right each line grants. For API products, decide which of the five uses the line sells (own live transactions, short retention, bulk analysis, rebuilding or reselling, AI) and whether any customer is already using the API for a broader purpose than the price covers.
+List products and the right each line grants. For API products, decide which right the line grants (own live transactions, short retention, bulk analysis, rebuilding or reselling, or an AI use; `references/api-access-scope.md` maps uses to the nine rights) and whether any customer is already using the API for a broader purpose than the price covers.
 
 ### 2. Choose the licensing units and structure
 
@@ -38,7 +56,7 @@ For a new product or a new granted right, run the `data-price-setting` skill fir
 Compute with code and show the inputs.
 
 - **Floor**: cost to produce and serve, plus any supplier fee, plus the margin floor.
-- **Reference**: realized prices from comparable past deals (median and range, by size band), and public benchmarks with sources.
+- **Reference**: realized prices from comparable past deals (median and range, by size band), shown with the discounts, credits and concessions that produced them, so that a concession is not read as a list price, and public benchmarks with sources.
 - **Value ceiling**: customer value drivers or willingness-to-pay results, expressed as a share of the value created.
 
 Set the list price inside the range between floor and ceiling, near the reference, and state the reasoning. Where evidence is thin, give a range and mark the line **hypothesis, to test**.
@@ -66,7 +84,7 @@ Run `scripts/check_price_book.py --pricebook <price-book.csv> [--mode release]` 
 - **Strategy mode (default).** A missing floor, or a data or API line with no stated right, is a warning. Use this while building.
 - **Release mode (`--mode release`).** Those two are errors. Run it before a price book goes out for quoting.
 
-The script also checks tier overlaps and gaps, unit price versus volume, volume cliffs, floor above list, duplicates, and that broader rights are not priced below internal use. Fix every error before presenting. Then backtest: re-quote the last 12 months of deals at the new list prices and show the difference against realized prices, by customer size.
+The script also checks tier overlaps and gaps, unit price versus volume, volume cliffs, floor above list, duplicates, and that broader rights are not priced below internal use. Fix every error before presenting. Then backtest: re-quote the deals in the backtest window from the review parameters in `pricing-governance.md` (ask if Unknown) at the new list prices and show the difference against realized prices, by customer size.
 
 ### 8. Prepare the decision
 
@@ -76,7 +94,7 @@ Summarize what the Pricing Council must decide: list prices, tiers, floors, appr
 
 `examples/price-book-example.csv` has data, API and software lines. L005 prices the Shopping API for live booking use only. L006 prices bulk retention of the same responses at a much higher rate, with a minimum commitment. Run it in release mode: no issues.
 
-## Output format
+## Output
 
 1. **Headline**: lines priced by type, data and API lines by granted right, and the main uncertainty.
 2. **Price book table** (summary) and the CSV file.
@@ -86,13 +104,16 @@ Summarize what the Pricing Council must decide: list prices, tiers, floors, appr
 6. **Council decision list**, including data and API products for the product manager to clear.
 7. **Inputs and assumptions used.**
 
-## Rules
+## Quality gate
+
+Before finishing, confirm each. They also bind every step above.
+
 
 - Compute figures with code. Show inputs next to every result.
 - Say which right every data and API line grants. A line without it is not a priced product.
 - An API price covers the use it states. Collecting, keeping or reusing responses is a separate, higher-priced right.
 - Never invent costs, benchmarks, or past prices. Mark assumptions and hypotheses.
 - Benchmarks come from public or customer-supplied sources with citations; do not infer competitor prices from private conversations.
-- Prices are proposals. The Pricing Council approves the price book, and Finance confirms the margin floors.
+- Prices are proposals. The Pricing Council approves the price book and the margin floors, as `pricing-governance.md` sets out.
 - Whether we may grant a right is the product manager's check in the rights pack. If it says a right cannot be granted, remove the line.
 - Customer-specific past prices are used only to set the reference range; do not reproduce them in general outputs.
