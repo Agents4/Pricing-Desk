@@ -1,15 +1,10 @@
 {
   "illustrative": true,
   "product": "Air Shopping Market Insights (not-viable test case)",
-  "dataset_id": "DS-DER-002",
+  "product_type": "data_license",
   "currency": "USD",
   "unit": "market-year (one origin-destination market, 12 months of access)",
   "base_right": "internal_use",
-  "eligible_rights": [
-    "internal_use",
-    "internal_analytics_shared_outputs",
-    "display_to_third_parties"
-  ],
   "coverage": {
     "current": 0.6,
     "reference": 0.9,

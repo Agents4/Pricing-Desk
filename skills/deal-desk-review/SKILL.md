@@ -16,17 +16,18 @@ Ask for anything missing before analyzing. Do not guess.
 3. **Approval matrix**: tier triggers, approvers, margin floors per product family.
 4. **Comparable deals**: recent deals from the deal log with similar product, size, and segment (at least 5 if available).
 5. **Customer context**: current spend, usage history, renewal date, open disputes, strategic notes.
+6. **For new or expanded API access: the purpose.** What will the customer do with the responses, and for how long will they keep them? Ask when the request does not say. Booking and serving their own traffic is the standard API use. Collecting, storing or analysing data in bulk, rebuilding it, reselling it or feeding AI is a data right and is priced as one (see `price-book-builder/references/api-access-scope.md`).
 
-If the price book or approval matrix is not provided, say so at the top of your answer and use the placeholder tiers from the desk blueprint (Tier 0 up to 10 percent discount; Tier 1 beyond band; Tier 2 above 250,000 USD total contract value, multi-year, or cross-family bundle; Tier 3 above 1 million USD, below floor, MFN, exclusivity, or data redistribution rights). Label them as placeholders.
+If the price book or approval matrix is not provided, say so at the top of your answer and use the placeholder tiers from the desk blueprint (Tier 0 up to 10 percent discount; Tier 1 beyond band; Tier 2 above 250,000 USD total contract value, multi-year, or cross-family bundle; Tier 3 above 1 million USD, below floor, MFN, exclusivity, data redistribution rights, or API access that keeps or collects data). Label them as placeholders.
 
 ## Process
 
 1. **Normalize the request.** Restate the deal in a table: product, unit, quantity, list price, requested price, term, ramp, commit, overage.
 2. **Compute the waterfall with code.** Use a script on the provided data; do not do arithmetic in prose. Show list value, each discount layer (volume, term, bundle, special), net price, total contract value, and annualized value. For usage-based pricing, model commit, expected usage, and overage at low, base, and high usage.
-3. **Check guardrails.** For each line: discount versus band, price versus floor, margin versus family floor (if cost data is supplied), term and payment terms versus standard, and non-standard clauses (MFN, exclusivity, price protection, redistribution or AI-use rights for data). For data lines, state the rights basis (Confirmed, Provisional, Contradicted, Blocked): whether we hold, in the register, the rights needed to grant what the quote gives the customer. A Provisional line can be priced and reviewed but is flagged as not cleared to quote.
+3. **Check guardrails.** For each line: discount versus band, price versus floor, margin versus family floor (if cost data is supplied), term and payment terms versus standard, and non-standard clauses (MFN, exclusivity, price protection, redistribution or AI-use rights for data). For data and API lines, state the right the quote grants the customer (`conferred_right`) and check it matches the price: a data right sold at an API booking rate, or a retention or bulk-use request on a per-call price, is a fail. Whether we may grant the right is the product manager's question; list it as an open question.
 4. **Compare with similar deals.** Show where this deal sits against comparables on net price per unit and discount depth. Flag if it would become the new low.
 5. **Assign the approval tier** by the first rule tripped, and name the rule.
-6. **Flag risks.** Precedent risk, cross-family cannibalization, metering or unit ambiguity, supplier-data rights, revenue recognition questions for Finance, legal terms for Legal.
+6. **Flag risks.** Precedent risk, cross-family cannibalization, metering or unit ambiguity, supplier-data questions for the product manager, revenue recognition questions for Finance, legal terms for Legal.
 7. **Draft two or three counteroffers** that trade value for concessions: for example a larger commit for a deeper tier, a longer term for a lower rate, a smaller starting scope with a ramp, or removal of a clause. Show the waterfall for each.
 
 ## Output format

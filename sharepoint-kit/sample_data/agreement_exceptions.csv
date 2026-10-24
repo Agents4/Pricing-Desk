@@ -1,4 +1,0 @@
-exception_id,agreement_id,dataset_id,use_right,status,clause_ref,reason,effective_date,expiry_date,legal_confirmed
-EX-001,AGR-102,,derivative_data_product,Prohibited,Section 7.1 (amended),Airline B opted out of aggregated analytics,2025-01-01,,Yes
-EX-002,AGR-101,DS-SUP-001,ai_retrieval_grounding,Granted,Side letter 2,Airline A allows retrieval use,2025-06-01,,No
-EX-003,AGR-101,,ai_evaluation,Granted,Side letter 3,Airline A allows evaluation use,2025-06-01,,Yes

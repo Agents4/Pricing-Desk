@@ -1,21 +1,12 @@
 #!/usr/bin/env python3
 """Price corridor calculator for a product or data licence.
 
-Works for any product the pricing desk prices (API access, software, services, data). Data rights
-only matter when the product carries data: give a dataset_id (the register dataset the product is
-built from or delivers).
+Works for any product the pricing desk prices (API access, software, services, data).
 
-The prices are for CONFERRED rights: what the customer may do with the product (base_right and
-rights[]). Whether we may confer them depends on the HELD rights in the register. The checker
-(price-book-builder/scripts/check_price_book.py) works that out through its coverage table and gives
-each conferred right a basis. Put those bases in rights_basis. Rights are a basis for the price, not a
-gate on running it:
-  Confirmed     we hold what is needed and Legal has confirmed it
-  Provisional   anything else, or not listed in rights_basis: a strategy, not yet cleared to quote
-  Contradicted  register evidence says we do not hold what is needed, Legal has not confirmed: priced
-                only as a labelled scenario
-  Blocked       Legal confirmed we do not hold what is needed: not priced
-(Older inputs may use eligible_rights = Confirmed and prohibited_rights = Blocked.)
+The prices are for the rights we GRANT the customer: what the customer may do with a data product or
+API responses (base_right and rights[]). The pricing desk assumes we hold the rights to grant them;
+the product manager checks that separately with the rights pack. Set product_type to data_license or
+api_access for a product that grants a scope; leave rights out for software and services.
 
 Triangulates three anchors into a price corridor and a recommended price:
   - cost floor         (what the price must cover, including supplier royalties and target margin)
@@ -24,8 +15,8 @@ Triangulates three anchors into a price corridor and a recommended price:
   - WTP evidence       (stated maximum prices, when there are enough points)
 
 It also prices extra rights granted to the customer from the incremental value they create (not from
-fixed multipliers), tests sensitivities, and values resolving open rights items
-through the coverage the product could reach.
+fixed multipliers), tests sensitivities, and values wider coverage
+through the share of customers or volume the product could reach.
 
 Usage:
     python price_corridor.py --in input.json [--md report.md] [--json result.json] [--csv lines.csv]
@@ -43,32 +34,18 @@ import sys
 
 SOURCE_QUALITY = {"estimate": 0.5, "interview": 0.75, "pilot": 1.0, "contract data": 1.0, "contract_data": 1.0}
 DEFAULT_WEIGHTS = {"value": 0.4, "market": 0.3, "wtp": 0.3}
-BASES = ("Confirmed", "Provisional", "Contradicted", "Blocked")
-LINE_COLUMNS = ["line_id", "product_id", "product_type", "dataset_id", "conferred_right", "data_form", "delivery", "unit", "tier_min",
-                "tier_max", "list_price", "floor_price", "currency", "term_months", "tier_model", "status", "version",
-                "rights_relevance", "notes"]
+SCOPE_TYPES = ("data_license", "api_access")
+LINE_COLUMNS = ["line_id", "product_id", "product_type", "conferred_right", "delivery", "unit", "tier_min",
+                "tier_max", "list_price", "floor_price", "currency", "term_months", "tier_model", "status", "version", "notes"]
 
 
-def rights_bound(inp):
-    return bool(inp.get("dataset_id")) or any(k in inp for k in ("rights_basis", "eligible_rights", "provisional_rights", "prohibited_rights"))
+def scoped(inp):
+    """True when the product grants a data or API scope (a conferred right)."""
+    return inp.get("product_type") in SCOPE_TYPES or "base_right" in inp or bool(inp.get("rights"))
 
 
 def base_right_of(inp):
-    return inp.get("base_right", "internal_use" if rights_bound(inp) else "")
-
-
-def right_basis(inp, right):
-    """Basis of a conferred right: Confirmed, Provisional, Contradicted, Blocked, or N/A (the product carries no data rights)."""
-    if not rights_bound(inp) or not right:
-        return "N/A"
-    listed = inp.get("rights_basis") or {}
-    if right in listed:
-        return listed[right]
-    if right in (inp.get("prohibited_rights") or []):
-        return "Blocked"
-    if right in (inp.get("eligible_rights") or []):
-        return "Confirmed"
-    return "Provisional"
+    return inp.get("base_right", "internal_use" if scoped(inp) else "")
 
 
 # ----------------------------------------------------------------------------- validation
@@ -87,17 +64,6 @@ def validate(inp):
 
     for k in ("product", "currency", "unit"):
         need("input", inp, k, str)
-    for k in ("eligible_rights", "provisional_rights", "prohibited_rights"):
-        if k in inp and not isinstance(inp[k], list):
-            errs.append(f"{k} must be a list of rights")
-    rb = inp.get("rights_basis")
-    if rb is not None:
-        if not isinstance(rb, dict):
-            errs.append("rights_basis must map each conferred right to Confirmed, Provisional, Contradicted or Blocked")
-        else:
-            for k, v in rb.items():
-                if v not in BASES:
-                    errs.append(f"rights_basis[{k}] must be one of {', '.join(BASES)}")
     cost = inp.get("cost")
     if not isinstance(cost, dict):
         errs.append("missing cost")
@@ -137,8 +103,6 @@ def validate(inp):
             errs.append(f"market.comps[{i}].comparability must be above 0 and at most 1")
     for i, w in enumerate((inp.get("wtp") or {}).get("points", [])):
         need(f"wtp.points[{i}]", w, "max_price_per_unit")
-    if rights_bound(inp) and right_basis(inp, base_right_of(inp)) == "Blocked":
-        errs.append("base_right is Blocked (Legal confirmed we do not hold the rights needed to confer it): the product cannot be priced for that right")
     for i, r in enumerate(inp.get("rights", [])):
         for k in ("right", "incremental_value_per_unit"):
             if k not in r:
@@ -340,7 +304,7 @@ def run_scenarios(inp):
     if cov.get("resolved") and cov.get("current"):
         def resolved(x):
             x["coverage"]["current"] = x["coverage"]["resolved"]
-        add(f"Open rights items resolved (coverage {cov['current']:.0%} to {cov['resolved']:.0%})", resolved)
+        add(f"Wider coverage ({cov['current']:.0%} to {cov['resolved']:.0%})", resolved)
     return base, scen
 
 
@@ -352,20 +316,16 @@ def rights_ladder(inp, base):
     m = inp["cost"]["min_margin_pct"]
     disc = base["disc"]
     base_right = base_right_of(inp)
-    out.append(dict(right=base_right or "(no data rights)", status="Base", basis=right_basis(inp, base_right), price=base["target"],
+    out.append(dict(right=base_right or "(no granted scope)", status="Base", price=base["target"],
                     list=base["list"], floor=base["floor"], multiple=1.0, note="Base right priced from the corridor."))
     for x in inp.get("rights", []):
         right = x["right"]
         if right == base_right:
             continue
-        basis = right_basis(inp, right)
-        if basis == "Blocked":
-            out.append(dict(right=right, status="Blocked", basis=basis, note="Legal confirmed we do not hold the rights needed to confer this. Not priced."))
-            continue
         cap = x.get("capture_share", 0.3)
         add_cost = x.get("incremental_cost_per_unit", 0.0) / (1 - r - m)
         price = base["target"] + x["incremental_value_per_unit"] * cap + add_cost
-        out.append(dict(right=right, status="Priced", basis=basis, price=price, list=price / (1 - disc), floor=base["floor"] + add_cost,
+        out.append(dict(right=right, status="Priced", price=price, list=price / (1 - disc), floor=base["floor"] + add_cost,
                         multiple=price / base["target"],
                         note=f"Base + {cap:.0%} of {x['incremental_value_per_unit']:,.2f} added value per unit + risk and supplier cost. Basis: {x.get('basis', 'not stated, treat as a hypothesis')}"))
     return out
@@ -381,14 +341,9 @@ def render(inp, base, scen, ladder):
     L = []
     if inp.get("illustrative"):
         L.append("> ILLUSTRATIVE: the inputs are invented to show the method. Do not quote these prices.\n")
-    L.append(f"# Price corridor: {inp['product']}" + (f" ({inp['dataset_id']})" if inp.get("dataset_id") else ""))
-    bb = right_basis(inp, base_right_of(inp))
-    if bb == "Provisional":
-        L.append("> RIGHTS PROVISIONAL: Legal has not confirmed that we hold the rights needed to confer what this price covers. Use it for strategy and to focus rights intake. "
-                 "Do not quote it until the rights are confirmed.\n")
-    elif bb == "Contradicted":
-        L.append("> RIGHTS CONTRADICTED: the register evidence says we do not hold the rights needed to confer what this price covers (Legal has not confirmed). "
-                 "This is a scenario only. Do not quote it.\n")
+    L.append(f"# Price corridor: {inp['product']}")
+    if scoped(inp):
+        L.append(f"Priced for the right granted to the customer: **{base_right_of(inp)}**. This price assumes we may grant it; the product manager checks that with the rights pack.\n")
     L.append(f"Unit: {inp['unit']}. Status: **{base['status']}**. Confidence: **{base['confidence']}**.\n")
     if base["status"] == "VIABLE":
         prov = "Provisional (low confidence): " if base["confidence"] == "Low" else ""
@@ -415,13 +370,10 @@ def render(inp, base, scen, ladder):
     for s in base["segments"]:
         L.append(f"| {s['name']} | {s['units']:,.0f} | {money(s['value_per_unit'], cur)} | {money(s['vbp'], cur)} | {money(s['vmax'], cur)} | {s['source']} |")
     if ladder:
-        L.append("\n## Conferred-right ladder (what the customer may do)")
-        L.append("| Right | Rights basis | Status | Realized | List | Multiple | Basis |\n|---|---|---|---|---|---|---|")
+        L.append("\n## Granted-right ladder (what the customer may do)")
+        L.append("| Right | Status | Realized | List | Multiple | Basis |\n|---|---|---|---|---|---|")
         for x in ladder:
-            if x["status"] == "Blocked":
-                L.append(f"| {x['right']} | Blocked | Blocked | - | - | - | {x['note']} |")
-            else:
-                L.append(f"| {x['right']} | {x.get('basis', 'N/A')} | {x['status']} | {money(x['price'], cur)} | {money(x['list'], cur)} | {x['multiple']:.2f}x | {x['note']} |")
+            L.append(f"| {x['right']} | {x['status']} | {money(x['price'], cur)} | {money(x['list'], cur)} | {x['multiple']:.2f}x | {x['note']} |")
     L.append("\n## Sensitivity")
     L.append("Price comes from value, market, and willingness to pay, so cost and demand changes show up in the floor and contribution, not the price.\n")
     L.append("| Scenario | Status | Realized | Change | Floor | Headroom over floor | Contribution |\n|---|---|---|---|---|---|---|")
@@ -437,10 +389,10 @@ def render(inp, base, scen, ladder):
     cov = inp.get("coverage") or {}
     if cov.get("resolved") and base["status"] == "VIABLE":
         for label, res in scen:
-            if label.startswith("Open rights"):
+            if label.startswith("Wider coverage"):
                 if res["status"] == "VIABLE":
                     gain = (res["target"] - base["target"]) * base["units"]
-                    L.append(f"\nResolving the open rights items lifts annual revenue by about {money(gain, cur)} through price alone, before any extra volume from wider coverage.")
+                    L.append(f"\nWider coverage lifts annual revenue by about {money(gain, cur)} through price alone, before any extra volume from wider coverage.")
     L.append("\n## Confidence")
     L.append(", ".join(base["confidence_reasons"]) + ".")
     if base["flags"]:
@@ -466,21 +418,15 @@ def lines_csv(inp, base, ladder, path):
         w = csv.DictWriter(fh, fieldnames=LINE_COLUMNS)
         w.writeheader()
         for x in ladder:
-            if x["status"] == "Blocked":
-                continue
-            ds = inp.get("dataset_id", "")
-            ur = x["right"] if ds else ""
+            ur = x["right"] if scoped(inp) else ""
             if x.get("right", "").startswith("("):
                 ur = ""
-            pid = inp.get("product_id") or ds or re.sub(r"[^A-Z0-9]+", "-", inp["product"].upper()).strip("-")
-            basis = x.get("basis", "N/A")
+            pid = inp.get("product_id") or re.sub(r"[^A-Z0-9]+", "-", inp["product"].upper()).strip("-")
             w.writerow(dict(
-                line_id=f"PL-{pid}-{ur or 'base'}", product_id=pid, product_type=inp.get("product_type") or ("data_license" if ds else "other"),
-                dataset_id=ds, conferred_right=ur, data_form=inp.get("data_form", "") if ds else "", delivery="", unit=inp["unit"], tier_min=1, tier_max="",
+                line_id=f"PL-{pid}-{ur or 'base'}", product_id=pid, product_type=inp.get("product_type") or "other",
+                conferred_right=ur, delivery="", unit=inp["unit"], tier_min=1, tier_max="",
                 list_price=round(x["list"], 2), floor_price=round(x["floor"], 2), currency=inp["currency"], term_months=12,
-                tier_model="all_units", status="Draft", version="0.1",
-                rights_relevance="Required" if ds else "None",
-                notes=f"rights {basis.lower()}: not cleared to quote" if basis in ("Provisional", "Contradicted") else ""))
+                tier_model="all_units", status="Draft", version="0.1", notes=""))
 
 
 def main():

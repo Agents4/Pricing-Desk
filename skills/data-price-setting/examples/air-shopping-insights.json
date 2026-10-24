@@ -1,16 +1,10 @@
 {
   "illustrative": true,
   "product": "Air Shopping Market Insights",
-  "dataset_id": "DS-DER-002",
+  "product_type": "data_license",
   "currency": "USD",
   "unit": "market-year (one origin-destination market, 12 months of access)",
   "base_right": "internal_use",
-  "rights_basis": {
-    "internal_use": "Confirmed",
-    "internal_analytics_shared_outputs": "Confirmed",
-    "display_to_third_parties": "Confirmed",
-    "redistribution_resale": "Blocked"
-  },
   "coverage": {
     "current": 0.6,
     "reference": 0.9,
@@ -123,14 +117,14 @@
       "incremental_value_per_unit": 6000,
       "capture_share": 0.25,
       "incremental_cost_per_unit": 800,
-      "basis": "resale case: lets buyers pass the product on (invented); in this illustration Legal has confirmed we do not hold the right to pass it on, so it shows as Blocked"
+      "basis": "resale case: lets buyers pass the product on (invented)"
     },
     {
       "right": "ai_retrieval_grounding",
       "incremental_value_per_unit": 1500,
       "capture_share": 0.25,
       "incremental_cost_per_unit": 120,
-      "basis": "agent grounding case: assistants answer fare-trend questions from this data (invented). Not in rights_basis, so it is priced as Provisional"
+      "basis": "agent grounding case: assistants answer fare-trend questions from this data (invented)"
     }
   ]
 }

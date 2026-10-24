@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """Pricing desk guard (Gemini CLI BeforeTool hook for write_file and replace).
 
-Blocks a file edit when the new text would:
-  1. set legal_confirmed to Yes in a register export (only Legal does that), or
-  2. set a price book line status to Approved (only the Pricing Council does that).
+Blocks a file edit when the new text would set a price book line status to Approved (only the
+Pricing Council does that).
 
 It is a guardrail against mistakes by the model, not a security control: it only sees
 write_file and replace calls, not edits made through shell commands or in other tools.
 
-Override for the people who hold the authority: set PRICING_DESK_LEGAL=1 (Legal) or
-PRICING_DESK_COUNCIL=1 (Pricing Council) in the environment before starting the CLI.
+Override for the Pricing Council: set PRICING_DESK_COUNCIL=1 in the environment before starting the CLI.
 
 Reads the hook JSON on stdin. Writes only JSON on stdout.
 Exit 0 always (decision is in the JSON); on unexpected input it allows the call.
@@ -20,9 +18,6 @@ import json
 import os
 import re
 import sys
-
-CONFIRMED_COLS = ("legal_confirmed", "confirmed")
-
 
 def text_of(tool_input):
     # write_file sends "content"; replace sends "new_string"
@@ -48,22 +43,6 @@ def csv_rows(text):
         return []
 
 
-def sets_legal_confirmed(path, text):
-    if os.environ.get("PRICING_DESK_LEGAL") == "1":
-        return False
-    low = path.lower()
-    # CSV or table style: a legal_confirmed column with value Yes
-    if low.endswith((".csv", ".tsv")):
-        for row in csv_rows(text):
-            for col in CONFIRMED_COLS:
-                if str(row.get(col, "")).strip().lower() == "yes":
-                    return True
-    # JSON / YAML / markdown style: legal_confirmed: Yes  or  "legal_confirmed": "Yes"
-    if re.search(r"legal_confirmed[\"']?\s*[:=]\s*[\"']?yes\b", text, re.I):
-        return True
-    return False
-
-
 def sets_approved(path, text):
     if os.environ.get("PRICING_DESK_COUNCIL") == "1":
         return False
@@ -83,12 +62,6 @@ def main():
         print(json.dumps({"decision": "allow"}))
         return
     path, text = path_of(tool_input), text_of(tool_input)
-    if sets_legal_confirmed(path, text):
-        print(json.dumps({
-            "decision": "deny",
-            "reason": "Blocked: only Legal sets legal_confirmed to Yes. Leave it blank and add the question for Legal instead.",
-        }))
-        return
     if sets_approved(path, text):
         print(json.dumps({
             "decision": "deny",
