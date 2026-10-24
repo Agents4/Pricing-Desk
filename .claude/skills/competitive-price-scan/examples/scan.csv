@@ -1,0 +1,4 @@
+competitor,product,unit,price,currency,right_or_scope,source_url,access_date,notes
+Rival A (invented),Search API,1000 calls,2.50,USD,booking use only,https://example.com/pricing,2026-10-20,invented example
+Rival B (invented),Fare data feed,month,9000,USD,,,,heard from a sales rep
+Rival C (invented),Search API,1000 calls,3.10,USD,booking use only,https://example.com/rival-c,2026-04-02,invented example

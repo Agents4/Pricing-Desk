@@ -1,0 +1,8 @@
+description = "Design tiers and packages for API access, software, services and data products. Sets tier structure on the chosen value metric, adds fences between tiers, wr..."
+prompt = """
+Use the packaging-design skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

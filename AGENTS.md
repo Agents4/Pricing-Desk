@@ -41,6 +41,12 @@ Load the skill by name, then follow it.
 | Read a proposal through Finance, Sales, procurement, product manager and Legal, competitor and metering lenses | `pricing-stakeholder-review` |
 | Release a price book: checker, change log, customer notice calendar | `price-book-release` |
 | Ask the product manager whether we hold a right, and read the answer back | `rights-handoff` |
+| Research how similar products are priced, from public sources | `analog-research` |
+| Check competitor prices with a source and date | `competitive-price-scan` |
+| Choose what to charge on (per search, per booking, look-to-book) | `value-metric-design` |
+| Design tiers, packages and fences | `packaging-design` |
+| Value a data product by cost, market and income | `data-product-valuation` |
+| Run the quarterly review of every price line | `quarterly-price-review` |
 | Add or change a skill | `pd-skill-author` |
 
 ## Context to load

@@ -136,5 +136,56 @@ class TestRightsList(unittest.TestCase):
         self.assertIn("6 open", r.stdout)
 
 
+
+class TestResearchScripts(unittest.TestCase):
+    def test_analog_checker_seed_entries(self):
+        d = os.path.join(ROOT, "core", "scaffold", "workspace", "context-library", "analogs")
+        r = run(os.path.join(SK, "analog-research", "scripts", "check_analogs.py"), "--dir", d)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("0 incomplete", r.stdout)
+
+    def test_analog_checker_flags_missing(self):
+        with tempfile.TemporaryDirectory() as td:
+            open(os.path.join(td, "x.md"), "w").write("---\nname: x\n---\n")
+            r = run(os.path.join(SK, "analog-research", "scripts", "check_analogs.py"), "--dir", td)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("INCOMPLETE", r.stdout)
+
+    def test_scan_log(self):
+        s = os.path.join(SK, "competitive-price-scan")
+        r = run(os.path.join(s, "scripts", "check_scan_log.py"), "--in", os.path.join(s, "examples", "scan.csv"), "--today", "2026-10-24", "--max-age-days", "90")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("UNVERIFIED", r.stdout)
+        self.assertIn("STALE", r.stdout)
+        self.assertIn("1 ok, 1 stale, 1 unverified", r.stdout)
+
+    def test_scorecard_unknown_not_zero(self):
+        s = os.path.join(SK, "value-metric-design")
+        r = run(os.path.join(s, "scripts", "metric_scorecard.py"), "--in", os.path.join(s, "examples", "metrics.json"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("equal (assumption A", r.stdout)
+        self.assertIn("hard to game", r.stdout)
+
+    def test_valuation(self):
+        s = os.path.join(SK, "data-product-valuation")
+        r = run(os.path.join(s, "scripts", "valuation.py"), "--in", os.path.join(s, "examples", "input.json"))
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("2,100,000", r.stdout)
+        self.assertIn("1,100,000", r.stdout)
+        self.assertIn("1,492,111", r.stdout)
+
+    def test_valuation_skips_without_rate(self):
+        s = os.path.join(SK, "data-product-valuation")
+        d = json.load(open(os.path.join(s, "examples", "input.json")))
+        del d["income"]["discount_rate"]
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump(d, f)
+        try:
+            r = run(os.path.join(s, "scripts", "valuation.py"), "--in", f.name)
+        finally:
+            os.unlink(f.name)
+        self.assertIn("Skipped: Income approach", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

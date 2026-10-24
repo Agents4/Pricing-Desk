@@ -1,0 +1,8 @@
+description = "Value a data product three ways, by cost to recreate, by market comparables and by income to the buyer, and show the range with the inputs behind each. Use w..."
+prompt = """
+Use the data-product-valuation skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""

@@ -1,0 +1,8 @@
+description = "Choose what to charge on. Lists candidate value metrics such as per search, per booking, look-to-book band, seats or data volume, scores them for visibility..."
+prompt = """
+Use the value-metric-design skill for this request. Follow the pricing desk rules in your context.
+
+Request and inputs: {{args}}
+
+If a needed input is missing, list it and stop. Recommend only; do not contact a customer or approve a price.
+"""
